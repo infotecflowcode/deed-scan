@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -11,10 +12,54 @@ import {
 } from "@/components/ui/dialog";
 import { ActivityForm } from "@/components/ActivityForm";
 import { ActivityTimeline } from "@/components/ActivityTimeline";
+import { ActivityDetailsModal } from "@/components/ActivityDetailsModal";
+import { ApprovalModal } from "@/components/ApprovalModal";
+import { UserSelector } from "@/components/UserSelector";
+import { useUser } from "@/contexts/UserContext";
+import { Activity, activities as mockActivities } from "@/data/mockData";
 import { Plus, Settings, Calendar } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
+  const { toast } = useToast();
+  const { currentUser } = useUser();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [activities, setActivities] = useState<Activity[]>(mockActivities);
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [approvalOpen, setApprovalOpen] = useState(false);
+
+  const handleApprove = (activityId: string, scores: any[], rejectionReason?: string) => {
+    setActivities(prev =>
+      prev.map(activity =>
+        activity.id === activityId
+          ? {
+              ...activity,
+              status: rejectionReason ? "rejected" : "approved",
+              approval: {
+                approverId: currentUser.id,
+                approverName: currentUser.name,
+                approvalDate: new Date().toISOString(),
+                criteriaScores: scores,
+                rejectionReason,
+              },
+            }
+          : activity
+      )
+    );
+    setApprovalOpen(false);
+    toast({
+      title: rejectionReason ? "Atividade reprovada" : "Atividade aprovada",
+      description: rejectionReason ? "A atividade foi reprovada com sucesso." : "A atividade foi aprovada com sucesso.",
+    });
+  };
+
+  const filteredActivities = activities.filter(activity => {
+    if (currentUser.role === "colaborador") {
+      return activity.collaboratorId === currentUser.id;
+    }
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -33,9 +78,14 @@ const Index = () => {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="icon">
-                <Settings className="w-4 h-4" />
-              </Button>
+              <UserSelector />
+              {currentUser.role === "admin" && (
+                <Link to="/settings">
+                  <Button variant="outline" size="icon">
+                    <Settings className="w-4 h-4" />
+                  </Button>
+                </Link>
+              )}
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="gap-2">
@@ -72,7 +122,18 @@ const Index = () => {
                 Visualize e gerencie todas as atividades registradas
               </p>
             </div>
-            <ActivityTimeline />
+            <ActivityTimeline
+              activities={filteredActivities}
+              onViewDetails={(activity) => {
+                setSelectedActivity(activity);
+                setDetailsOpen(true);
+              }}
+              onApprove={(activity) => {
+                setSelectedActivity(activity);
+                setApprovalOpen(true);
+              }}
+              canApprove={currentUser.role === "fiscal" || currentUser.role === "admin"}
+            />
           </TabsContent>
 
           <TabsContent value="calendar" className="space-y-4">
@@ -86,6 +147,23 @@ const Index = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      <ActivityDetailsModal
+        activity={selectedActivity}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+      />
+
+      <ApprovalModal
+        activity={selectedActivity}
+        open={approvalOpen}
+        onOpenChange={setApprovalOpen}
+        onApprove={(scores, rejectionReason) => {
+          if (selectedActivity) {
+            handleApprove(selectedActivity.id, scores, rejectionReason);
+          }
+        }}
+      />
     </div>
   );
 };

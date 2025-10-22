@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { ActivityCard } from "./ActivityCard";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -9,49 +7,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, Search } from "lucide-react";
+import { ActivityCard } from "@/components/ActivityCard";
+import { Activity, serviceGroups } from "@/data/mockData";
+import { Search, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
 
-const mockActivities = [
-  {
-    id: "1",
-    title: "Manutenção Preventiva - Ar Condicionado",
-    collaborator: "João Silva",
-    date: "20/10/2025 08:00",
-    duration: "2h 30min",
-    status: "approved" as const,
-    photoCount: 5,
-    docCount: 2,
-    groupColor: "#3b82f6",
-  },
-  {
-    id: "2",
-    title: "Limpeza Geral - Sala de Reuniões",
-    collaborator: "Maria Santos",
-    date: "20/10/2025 14:00",
-    duration: "1h 15min",
-    status: "pending" as const,
-    photoCount: 3,
-    docCount: 0,
-    groupColor: "#10b981",
-  },
-  {
-    id: "3",
-    title: "Instalação de Equipamentos",
-    collaborator: "Pedro Oliveira",
-    date: "19/10/2025 09:30",
-    duration: "3h 45min",
-    status: "pending" as const,
-    photoCount: 8,
-    docCount: 1,
-    groupColor: "#f59e0b",
-  },
-];
+interface ActivityTimelineProps {
+  activities: Activity[];
+  onViewDetails: (activity: Activity) => void;
+  onApprove: (activity: Activity) => void;
+  canApprove: boolean;
+}
 
-export const ActivityTimeline = () => {
+export const ActivityTimeline = ({
+  activities,
+  onViewDetails,
+  onApprove,
+  canApprove,
+}: ActivityTimelineProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const filteredActivities = mockActivities.filter((activity) => {
+  const filteredActivities = activities.filter((activity) => {
     const matchesSearch = activity.title
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
@@ -59,6 +37,24 @@ export const ActivityTimeline = () => {
       statusFilter === "all" || activity.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const convertToCardFormat = (activity: Activity) => {
+    const group = serviceGroups.find(g => g.id === activity.groupId);
+    const startDate = new Date(activity.startDate);
+    const endDate = new Date(activity.endDate);
+    const duration = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60));
+
+    return {
+      title: activity.title,
+      collaborator: activity.collaboratorName,
+      date: format(startDate, "dd/MM/yyyy HH:mm"),
+      duration: `${Math.floor(duration / 60)}h ${duration % 60}min`,
+      status: activity.status,
+      photoCount: activity.photos.length,
+      docCount: activity.documents.length,
+      groupColor: group?.color || "#000",
+    };
+  };
 
   return (
     <div className="space-y-6">
@@ -92,15 +88,17 @@ export const ActivityTimeline = () => {
       </div>
 
       <div className="space-y-4">
-        {filteredActivities.map((activity) => (
-          <ActivityCard
-            key={activity.id}
-            {...activity}
-            onView={() => console.log("View", activity.id)}
-            onEdit={() => console.log("Edit", activity.id)}
-            onApprove={() => console.log("Approve", activity.id)}
-          />
-        ))}
+        {filteredActivities.map((activity) => {
+          const cardProps = convertToCardFormat(activity);
+          return (
+            <ActivityCard
+              key={activity.id}
+              {...cardProps}
+              onView={() => onViewDetails(activity)}
+              onApprove={canApprove && activity.status === "pending" ? () => onApprove(activity) : undefined}
+            />
+          );
+        })}
       </div>
 
       {filteredActivities.length === 0 && (
