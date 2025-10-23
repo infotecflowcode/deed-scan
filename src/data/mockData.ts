@@ -62,6 +62,22 @@ export const evaluationCriteria: EvaluationCriteria[] = [
   { id: "5", name: "Documentação", maxScore: 5, required: false },
 ];
 
+// Comments
+export interface Comment {
+  id: string;
+  thread_id: string;
+  author: string;
+  content: string;
+  created_at: string;
+}
+
+export interface CommentThread {
+  id: string;
+  x: number;
+  y: number;
+  comments: Comment[];
+}
+
 export const activities: Activity[] = [
   {
     id: "1",

@@ -15,6 +15,7 @@ import { ActivityTimeline } from "@/components/ActivityTimeline";
 import { ActivityDetailsModal } from "@/components/ActivityDetailsModal";
 import { ApprovalModal } from "@/components/ApprovalModal";
 import { UserSelector } from "@/components/UserSelector";
+import { CommentSystem } from "@/components/CommentSystem";
 import { useUser } from "@/contexts/UserContext";
 import { Activity, activities as mockActivities } from "@/data/mockData";
 import { Plus, Settings, Calendar } from "lucide-react";
@@ -164,6 +165,8 @@ const Index = () => {
           }
         }}
       />
+
+      <CommentSystem enabled={true} />
     </div>
   );
 };

@@ -17,10 +17,10 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 const mockUsers: User[] = [
-  { id: "1", name: "João Silva", email: "joao@example.com", role: "colaborador" },
-  { id: "2", name: "Maria Santos", email: "maria@example.com", role: "lider" },
-  { id: "3", name: "Carlos Oliveira", email: "carlos@example.com", role: "fiscal" },
-  { id: "4", name: "Admin System", email: "admin@example.com", role: "admin" },
+  { id: "1", name: "Swellen", email: "swellen@example.com", role: "colaborador" },
+  { id: "2", name: "João", email: "joao@example.com", role: "lider" },
+  { id: "3", name: "Leo", email: "leo@example.com", role: "fiscal" },
+  { id: "4", name: "Hemmely", email: "hemmely@example.com", role: "admin" },
 ];
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
