@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X, Send } from "lucide-react";
+import { X, Send, Trash2 } from "lucide-react";
 import { Comment } from "@/data/mockData";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -23,9 +23,10 @@ interface CommentThreadProps {
   comments: Comment[];
   onClose: () => void;
   onAddComment: (content: string, responsavel: string) => void;
+  onDeleteComment: (commentId: string) => void;
 }
 
-export const CommentThread = ({ x, y, comments, onClose, onAddComment }: CommentThreadProps) => {
+export const CommentThread = ({ x, y, comments, onClose, onAddComment, onDeleteComment }: CommentThreadProps) => {
   const [newComment, setNewComment] = useState("");
   const [selectedResponsavel, setSelectedResponsavel] = useState<string>("");
 
@@ -76,7 +77,7 @@ export const CommentThread = ({ x, y, comments, onClose, onAddComment }: Comment
 
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {comments.filter(c => c.content.trim()).map((comment) => (
-          <div key={comment.id} className="flex gap-2">
+          <div key={comment.id} className="flex gap-2 group">
             <Avatar className={cn("h-8 w-8 flex-shrink-0", getAvatarColor(comment.author))}>
               <AvatarFallback className="text-white text-xs">
                 {getInitials(comment.author)}
@@ -91,6 +92,14 @@ export const CommentThread = ({ x, y, comments, onClose, onAddComment }: Comment
                     locale: ptBR,
                   })}
                 </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-auto"
+                  onClick={() => onDeleteComment(comment.id)}
+                >
+                  <Trash2 className="h-3 w-3 text-red-500" />
+                </Button>
               </div>
               <p className="text-sm text-foreground mt-1 break-words">{comment.content}</p>
             </div>

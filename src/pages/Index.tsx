@@ -16,6 +16,8 @@ import { ActivityDetailsModal } from "@/components/ActivityDetailsModal";
 import { ApprovalModal } from "@/components/ApprovalModal";
 import { UserSelector } from "@/components/UserSelector";
 import { CommentSystem } from "@/components/CommentSystem";
+import { CalendarView } from "@/components/CalendarView";
+import { GanttTimeline } from "@/components/GanttTimeline";
 import { useUser } from "@/contexts/UserContext";
 import { Activity, activities as mockActivities } from "@/data/mockData";
 import { Plus, Settings, Calendar } from "lucide-react";
@@ -110,13 +112,14 @@ const Index = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="timeline" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+        <Tabs defaultValue="listagem" className="space-y-6">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3">
+            <TabsTrigger value="listagem">Listagem</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="calendar">Calendário</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="timeline" className="space-y-4">
+          <TabsContent value="listagem" className="space-y-4">
             <div>
               <h2 className="text-2xl font-semibold mb-2">Atividades Recentes</h2>
               <p className="text-muted-foreground">
@@ -137,14 +140,34 @@ const Index = () => {
             />
           </TabsContent>
 
+          <TabsContent value="timeline" className="space-y-4">
+            <GanttTimeline
+              activities={filteredActivities}
+              onViewDetails={(activity) => {
+                setSelectedActivity(activity);
+                setDetailsOpen(true);
+              }}
+              onApprove={(activity) => {
+                setSelectedActivity(activity);
+                setApprovalOpen(true);
+              }}
+              canApprove={currentUser.role === "fiscal" || currentUser.role === "admin"}
+            />
+          </TabsContent>
+
           <TabsContent value="calendar" className="space-y-4">
-            <div className="text-center py-12">
-              <Calendar className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Visualização de Calendário</h3>
-              <p className="text-muted-foreground">
-                Em breve: visualize suas atividades em formato de calendário
-              </p>
-            </div>
+            <CalendarView
+              activities={filteredActivities}
+              onViewDetails={(activity) => {
+                setSelectedActivity(activity);
+                setDetailsOpen(true);
+              }}
+              onApprove={(activity) => {
+                setSelectedActivity(activity);
+                setApprovalOpen(true);
+              }}
+              canApprove={currentUser.role === "fiscal" || currentUser.role === "admin"}
+            />
           </TabsContent>
         </Tabs>
       </main>

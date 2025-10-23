@@ -3,6 +3,8 @@ import { CommentMarker } from "./CommentMarker";
 import { CommentThread } from "./CommentThread";
 import { Comment, CommentThread as CommentThreadType } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
+import { commentService } from "@/lib/comments";
+import { testSupabaseConnection } from "@/lib/test-supabase";
 
 interface CommentSystemProps {
   enabled?: boolean;
@@ -17,10 +19,20 @@ export const CommentSystem = ({ enabled = true }: CommentSystemProps) => {
   useEffect(() => {
     if (!enabled) return;
 
+    // Test Supabase connection on mount
+    testSupabaseConnection().then(success => {
+      console.log('Supabase test result:', success);
+    });
+
     const handleContextMenu = (e: MouseEvent) => {
       // Só permite comentário em áreas válidas (não em modais, dialogs, etc)
       const target = e.target as HTMLElement;
       if (target.closest('[role="dialog"]') || target.closest('.comment-thread')) {
+        return;
+      }
+
+      // Allow right-click with Ctrl key to open browser context menu
+      if (e.ctrlKey) {
         return;
       }
 
@@ -62,25 +74,90 @@ export const CommentSystem = ({ enabled = true }: CommentSystemProps) => {
     return () => document.removeEventListener("contextmenu", handleContextMenu);
   }, [enabled, toast]);
 
-  const handleAddComment = (threadId: string, content: string, responsavel: string) => {
-    setThreads((prev) =>
-      prev.map((thread) => {
-        if (thread.id === threadId) {
-          const newComment: Comment = {
-            id: `comment-${Date.now()}`,
-            thread_id: threadId,
-            author: responsavel,
-            content,
-            created_at: new Date().toISOString(),
-          };
-          return {
+  const handleAddComment = async (threadId: string, content: string, responsavel: string) => {
+    console.log('handleAddComment called with:', { threadId, content, responsavel });
+
+    try {
+      const savedComment = await commentService.createComment({
+        comentario: content,
+        responsavel,
+        thread: threadId,
+      });
+
+      console.log('Result from commentService.createComment:', savedComment);
+
+      if (savedComment) {
+        setThreads((prev) =>
+          prev.map((thread) => {
+            if (thread.id === threadId) {
+              const newComment: Comment = {
+                id: savedComment.id.toString(),
+                thread_id: threadId,
+                author: responsavel,
+                content,
+                created_at: savedComment.created_at,
+              };
+              return {
+                ...thread,
+                comments: [...thread.comments, newComment],
+              };
+            }
+            return thread;
+          })
+        );
+
+        toast({
+          title: "Comentário salvo",
+          description: "Seu comentário foi salvo no Supabase",
+        });
+      } else {
+        toast({
+          title: "Erro ao salvar comentário",
+          description: "Não foi possível salvar o comentário",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error saving comment:", error);
+      toast({
+        title: "Erro ao salvar comentário",
+        description: "Não foi possível salvar o comentário",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      const success = await commentService.deleteComment(parseInt(commentId));
+
+      if (success) {
+        setThreads((prev) =>
+          prev.map((thread) => ({
             ...thread,
-            comments: [...thread.comments, newComment],
-          };
-        }
-        return thread;
-      })
-    );
+            comments: thread.comments.filter((comment) => comment.id !== commentId),
+          }))
+        );
+
+        toast({
+          title: "Comentário deletado",
+          description: "O comentário foi removido com sucesso",
+        });
+      } else {
+        toast({
+          title: "Erro ao deletar comentário",
+          description: "Não foi possível deletar o comentário",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      toast({
+        title: "Erro ao deletar comentário",
+        description: "Não foi possível deletar o comentário",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeleteThread = (threadId: string) => {
@@ -129,6 +206,7 @@ export const CommentSystem = ({ enabled = true }: CommentSystemProps) => {
               setActiveThreadId(null);
             }}
             onAddComment={(content, responsavel) => handleAddComment(activeThreadId, content, responsavel)}
+            onDeleteComment={handleDeleteComment}
           />
         </div>
       )}

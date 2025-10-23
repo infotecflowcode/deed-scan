@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, ArrowLeft } from "lucide-react";
 import { serviceGroups, activityTypes, evaluationCriteria, ServiceGroup, ActivityType, EvaluationCriteria } from "@/data/mockData";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -41,11 +42,18 @@ export default function Settings() {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">Configurações</h1>
-              <p className="text-sm text-muted-foreground">
-                Gerencie grupos, tipos, critérios e usuários
-              </p>
+            <div className="flex items-center gap-4">
+              <Link to="/">
+                <Button variant="ghost" size="icon">
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold">Configurações</h1>
+                <p className="text-sm text-muted-foreground">
+                  Gerencie grupos, tipos, critérios e usuários
+                </p>
+              </div>
             </div>
             <UserSelector />
           </div>

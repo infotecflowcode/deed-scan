@@ -43,7 +43,6 @@ export const UserSelector = () => {
           {mockUsers.map((user) => (
             <SelectItem key={user.id} value={user.id}>
               <div className="flex items-center gap-2">
-                <span>{user.name}</span>
                 <Badge className={`${roleColors[user.role]} text-white text-xs`}>
                   {roleLabels[user.role]}
                 </Badge>
