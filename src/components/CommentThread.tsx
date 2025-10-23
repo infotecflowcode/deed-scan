@@ -95,7 +95,7 @@ export const CommentThread = ({ x, y, comments, onClose, onAddComment, onDeleteC
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-auto"
+                  className="h-6 w-6 opacity-50 hover:opacity-100 transition-opacity ml-auto"
                   onClick={() => onDeleteComment(comment.id)}
                 >
                   <Trash2 className="h-3 w-3 text-red-500" />

@@ -12,6 +12,8 @@ export interface CommentData {
   comentario: string
   responsavel: string
   thread: string
+  position_x?: number
+  position_y?: number
 }
 
 export const commentService = {

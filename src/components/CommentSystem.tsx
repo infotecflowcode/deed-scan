@@ -4,7 +4,6 @@ import { CommentThread } from "./CommentThread";
 import { Comment, CommentThread as CommentThreadType } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
 import { commentService } from "@/lib/comments";
-import { testSupabaseConnection } from "@/lib/test-supabase";
 
 interface CommentSystemProps {
   enabled?: boolean;
@@ -19,10 +18,46 @@ export const CommentSystem = ({ enabled = true }: CommentSystemProps) => {
   useEffect(() => {
     if (!enabled) return;
 
-    // Test Supabase connection on mount
-    testSupabaseConnection().then(success => {
-      console.log('Supabase test result:', success);
-    });
+    // Load existing comments from Supabase
+    const loadExistingComments = async () => {
+      try {
+        const existingComments = await commentService.getAllComments();
+        console.log('Loaded existing comments:', existingComments);
+
+        // Group comments by thread
+        const threadMap = new Map<string, CommentThreadType>();
+
+        existingComments.forEach(comment => {
+          if (!comment.thread) return;
+
+          if (!threadMap.has(comment.thread)) {
+            threadMap.set(comment.thread, {
+              id: comment.thread,
+              x: 100, // Default position, will be overridden
+              y: 100,
+              comments: []
+            });
+          }
+
+          const thread = threadMap.get(comment.thread)!;
+          thread.comments.push({
+            id: comment.id.toString(),
+            thread_id: comment.thread,
+            author: comment.responsavel || 'Unknown',
+            content: comment.comentario || '',
+            created_at: comment.created_at
+          });
+        });
+
+        if (threadMap.size > 0) {
+          setThreads(Array.from(threadMap.values()));
+        }
+      } catch (error) {
+        console.error('Error loading existing comments:', error);
+      }
+    };
+
+    loadExistingComments();
 
     const handleContextMenu = (e: MouseEvent) => {
       // Só permite comentário em áreas válidas (não em modais, dialogs, etc)
@@ -38,11 +73,9 @@ export const CommentSystem = ({ enabled = true }: CommentSystemProps) => {
 
       e.preventDefault();
 
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-
-      const x = e.clientX - rect.left + window.scrollX;
-      const y = e.clientY - rect.top + window.scrollY;
+      // Get absolute position on the page
+      const x = e.pageX;
+      const y = e.pageY;
 
       // Criar novo thread
       const newThreadId = `thread-${Date.now()}`;
@@ -78,10 +111,15 @@ export const CommentSystem = ({ enabled = true }: CommentSystemProps) => {
     console.log('handleAddComment called with:', { threadId, content, responsavel });
 
     try {
+      // Get thread position for saving
+      const currentThread = threads.find(t => t.id === threadId);
+
       const savedComment = await commentService.createComment({
         comentario: content,
         responsavel,
         thread: threadId,
+        position_x: currentThread?.x || 0,
+        position_y: currentThread?.y || 0,
       });
 
       console.log('Result from commentService.createComment:', savedComment);
@@ -170,7 +208,7 @@ export const CommentSystem = ({ enabled = true }: CommentSystemProps) => {
   if (!enabled) return null;
 
   return (
-    <div ref={containerRef} className="fixed inset-0 pointer-events-none z-40">
+    <div ref={containerRef} className="fixed inset-0 pointer-events-none z-40" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }}>
       {threads.map((thread) => {
         // Não mostrar marcador se o thread não tiver conteúdo ainda
         const hasContent = thread.comments.some((c) => c.content.trim());

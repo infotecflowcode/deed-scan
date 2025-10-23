@@ -21,6 +21,7 @@ import { GanttTimeline } from "@/components/GanttTimeline";
 import { ActivityFilters, ActivityFiltersType } from "@/components/ActivityFilters";
 import { ActivityEditModal } from "@/components/ActivityEditModal";
 import { EditLog } from "@/data/mockData";
+import { Dashboard } from "@/components/Dashboard";
 import { useUser } from "@/contexts/UserContext";
 import { Activity, activities as mockActivities } from "@/data/mockData";
 import { Plus, Settings, Calendar } from "lucide-react";
@@ -152,12 +153,17 @@ const Index = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="listagem" className="space-y-6">
-          <TabsList className="grid w-full max-w-2xl grid-cols-3">
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="grid w-full max-w-3xl grid-cols-4">
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="listagem">Listagem</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="calendar">Calendário</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="dashboard" className="space-y-4">
+            <Dashboard activities={filteredActivities} />
+          </TabsContent>
 
           <TabsContent value="listagem" className="space-y-4">
             <div className="flex items-start justify-between">
