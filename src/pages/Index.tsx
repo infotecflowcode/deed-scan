@@ -18,6 +18,9 @@ import { UserSelector } from "@/components/UserSelector";
 import { CommentSystem } from "@/components/CommentSystem";
 import { CalendarView } from "@/components/CalendarView";
 import { GanttTimeline } from "@/components/GanttTimeline";
+import { ActivityFilters, ActivityFiltersType } from "@/components/ActivityFilters";
+import { ActivityEditModal } from "@/components/ActivityEditModal";
+import { EditLog } from "@/data/mockData";
 import { useUser } from "@/contexts/UserContext";
 import { Activity, activities as mockActivities } from "@/data/mockData";
 import { Plus, Settings, Calendar } from "lucide-react";
@@ -31,6 +34,13 @@ const Index = () => {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [approvalOpen, setApprovalOpen] = useState(false);
+  const [filters, setFilters] = useState<ActivityFiltersType>({
+    status: [],
+    groups: [],
+    collaborators: [],
+  });
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
 
   const handleApprove = (activityId: string, scores: any[], rejectionReason?: string) => {
     setActivities(prev =>
@@ -57,10 +67,40 @@ const Index = () => {
     });
   };
 
+  const handleEdit = (activity: Activity) => {
+    setEditingActivity(activity);
+    setEditOpen(true);
+  };
+
+  const handleSaveEdit = (updatedActivity: Activity, editLog: EditLog) => {
+    setActivities(prev =>
+      prev.map(activity =>
+        activity.id === updatedActivity.id ? updatedActivity : activity
+      )
+    );
+  };
+
   const filteredActivities = activities.filter(activity => {
+    // Filter by user role
     if (currentUser.role === "colaborador") {
-      return activity.collaboratorId === currentUser.id;
+      if (activity.collaboratorId !== currentUser.id) return false;
     }
+
+    // Filter by status
+    if (filters.status.length > 0) {
+      if (!filters.status.includes(activity.status)) return false;
+    }
+
+    // Filter by groups
+    if (filters.groups.length > 0) {
+      if (!filters.groups.includes(activity.groupId)) return false;
+    }
+
+    // Filter by collaborators
+    if (filters.collaborators.length > 0) {
+      if (!filters.collaborators.includes(activity.collaboratorName)) return false;
+    }
+
     return true;
   });
 
@@ -120,11 +160,18 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="listagem" className="space-y-4">
-            <div>
-              <h2 className="text-2xl font-semibold mb-2">Atividades Recentes</h2>
-              <p className="text-muted-foreground">
-                Visualize e gerencie todas as atividades registradas
-              </p>
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold mb-2">Atividades Recentes</h2>
+                <p className="text-muted-foreground">
+                  Visualize e gerencie todas as atividades registradas
+                </p>
+              </div>
+              <ActivityFilters
+                activities={activities}
+                filters={filters}
+                onFiltersChange={setFilters}
+              />
             </div>
             <ActivityTimeline
               activities={filteredActivities}
@@ -132,6 +179,7 @@ const Index = () => {
                 setSelectedActivity(activity);
                 setDetailsOpen(true);
               }}
+              onEdit={handleEdit}
               onApprove={(activity) => {
                 setSelectedActivity(activity);
                 setApprovalOpen(true);
@@ -141,6 +189,13 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="timeline" className="space-y-4">
+            <div className="flex items-center justify-end mb-4">
+              <ActivityFilters
+                activities={activities}
+                filters={filters}
+                onFiltersChange={setFilters}
+              />
+            </div>
             <GanttTimeline
               activities={filteredActivities}
               onViewDetails={(activity) => {
@@ -156,6 +211,13 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="calendar" className="space-y-4">
+            <div className="flex items-center justify-end mb-4">
+              <ActivityFilters
+                activities={activities}
+                filters={filters}
+                onFiltersChange={setFilters}
+              />
+            </div>
             <CalendarView
               activities={filteredActivities}
               onViewDetails={(activity) => {
@@ -187,6 +249,13 @@ const Index = () => {
             handleApprove(selectedActivity.id, scores, rejectionReason);
           }
         }}
+      />
+
+      <ActivityEditModal
+        activity={editingActivity}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSave={handleSaveEdit}
       />
 
       <CommentSystem enabled={true} />

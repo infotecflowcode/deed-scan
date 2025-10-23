@@ -16,6 +16,18 @@ export interface EvaluationCriteria {
   required: boolean;
 }
 
+export interface EditLog {
+  id: string;
+  userId: string;
+  userName: string;
+  editDate: string;
+  changes: {
+    field: string;
+    oldValue: any;
+    newValue: any;
+  }[];
+}
+
 export interface Activity {
   id: string;
   title: string;
@@ -36,6 +48,7 @@ export interface Activity {
     criteriaScores: { criteriaId: string; score: number; comment: string }[];
     rejectionReason?: string;
   };
+  editHistory?: EditLog[];
 }
 
 export const serviceGroups: ServiceGroup[] = [

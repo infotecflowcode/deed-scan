@@ -2,7 +2,19 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Activity, serviceGroups } from "@/data/mockData";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -16,6 +28,8 @@ interface CalendarViewProps {
 
 export const CalendarView = ({ activities, onViewDetails }: CalendarViewProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -49,11 +63,22 @@ export const CalendarView = ({ activities, onViewDetails }: CalendarViewProps) =
   };
 
   const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+    setCurrentDate(newDate);
+    setSelectedMonth(newDate.getMonth());
+    setSelectedYear(newDate.getFullYear());
   };
 
   const prevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    setCurrentDate(newDate);
+    setSelectedMonth(newDate.getMonth());
+    setSelectedYear(newDate.getFullYear());
+  };
+
+  const handleMonthYearChange = () => {
+    const newDate = new Date(selectedYear, selectedMonth, 1);
+    setCurrentDate(newDate);
   };
 
   const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -62,13 +87,69 @@ export const CalendarView = ({ activities, onViewDetails }: CalendarViewProps) =
     <div className="space-y-4">
       {/* Header do calendário */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">
-          {format(currentDate, "MMMM yyyy", { locale: ptBR })}
-        </h2>
-        <div className="flex gap-2">
+        <h2 className="text-2xl font-semibold">Visualização de Calendário</h2>
+        <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={prevMonth}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="min-w-[200px] justify-center">
+                <Calendar className="mr-2 h-4 w-4" />
+                {format(currentDate, "MMMM yyyy", { locale: ptBR })}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-4" align="center">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Mês</label>
+                  <Select
+                    value={selectedMonth.toString()}
+                    onValueChange={(value) => setSelectedMonth(parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <SelectItem key={i} value={i.toString()}>
+                          {format(new Date(2024, i, 1), "MMMM", { locale: ptBR })}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Ano</label>
+                  <Select
+                    value={selectedYear.toString()}
+                    onValueChange={(value) => setSelectedYear(parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 10 }, (_, i) => {
+                        const year = new Date().getFullYear() - 2 + i;
+                        return (
+                          <SelectItem key={year} value={year.toString()}>
+                            {year}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button onClick={handleMonthYearChange} className="w-full">
+                  Aplicar
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+
           <Button variant="outline" size="icon" onClick={nextMonth}>
             <ChevronRight className="h-4 w-4" />
           </Button>

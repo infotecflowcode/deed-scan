@@ -5,7 +5,19 @@ import { Badge } from "@/components/ui/badge";
 import { Activity, serviceGroups } from "@/data/mockData";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface GanttTimelineProps {
   activities: Activity[];
@@ -16,6 +28,7 @@ interface GanttTimelineProps {
 
 export const GanttTimeline = ({ activities, onViewDetails }: GanttTimelineProps) => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 });
@@ -47,11 +60,19 @@ export const GanttTimeline = ({ activities, onViewDetails }: GanttTimelineProps)
   };
 
   const nextWeek = () => {
-    setCurrentWeek(addDays(currentWeek, 7));
+    const newWeek = addDays(currentWeek, 7);
+    setCurrentWeek(newWeek);
+    setSelectedDate(newWeek);
   };
 
   const prevWeek = () => {
-    setCurrentWeek(addDays(currentWeek, -7));
+    const newWeek = addDays(currentWeek, -7);
+    setCurrentWeek(newWeek);
+    setSelectedDate(newWeek);
+  };
+
+  const handleDateChange = () => {
+    setCurrentWeek(selectedDate);
   };
 
   const timeSlots = Array.from({ length: 24 }, (_, i) => i);
@@ -66,18 +87,44 @@ export const GanttTimeline = ({ activities, onViewDetails }: GanttTimelineProps)
             Visualização de atividades por período e horário
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium">
-            {format(weekStart, "dd MMM", { locale: ptBR })} - {format(weekEnd, "dd MMM yyyy", { locale: ptBR })}
-          </span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="icon" onClick={prevWeek}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={nextWeek}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={prevWeek}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="min-w-[250px] justify-center">
+                <Calendar className="mr-2 h-4 w-4" />
+                {format(weekStart, "dd MMM", { locale: ptBR })} - {format(weekEnd, "dd MMM yyyy", { locale: ptBR })}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-4" align="center">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Selecionar Data</label>
+                  <input
+                    type="date"
+                    value={format(selectedDate, "yyyy-MM-dd")}
+                    onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                    className="w-full px-3 py-2 border border-input rounded-md"
+                  />
+                </div>
+
+                <Button onClick={handleDateChange} className="w-full">
+                  Ir para essa semana
+                </Button>
+
+                <div className="text-xs text-muted-foreground text-center">
+                  A semana será calculada automaticamente
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <Button variant="outline" size="icon" onClick={nextWeek}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 

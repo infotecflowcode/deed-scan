@@ -17,6 +17,7 @@ interface ActivityTimelineProps {
   activities: Activity[];
   onViewDetails: (activity: Activity) => void;
   onApprove: (activity: Activity) => void;
+  onEdit?: (activity: Activity) => void;
   canApprove: boolean;
 }
 
@@ -24,6 +25,7 @@ export const ActivityTimeline = ({
   activities,
   onViewDetails,
   onApprove,
+  onEdit,
   canApprove,
 }: ActivityTimelineProps) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -95,6 +97,7 @@ export const ActivityTimeline = ({
               key={activity.id}
               {...cardProps}
               onView={() => onViewDetails(activity)}
+              onEdit={onEdit ? () => onEdit(activity) : undefined}
               onApprove={canApprove && activity.status === "pending" ? () => onApprove(activity) : undefined}
             />
           );
