@@ -3,26 +3,37 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { X, Send } from "lucide-react";
 import { Comment } from "@/data/mockData";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+const RESPONSAVEIS = ["Swellen", "João", "Leo", "Hemmely"];
 
 interface CommentThreadProps {
   x: number;
   y: number;
   comments: Comment[];
   onClose: () => void;
-  onAddComment: (content: string) => void;
+  onAddComment: (content: string, responsavel: string) => void;
 }
 
 export const CommentThread = ({ x, y, comments, onClose, onAddComment }: CommentThreadProps) => {
   const [newComment, setNewComment] = useState("");
+  const [selectedResponsavel, setSelectedResponsavel] = useState<string>("");
 
   const handleSubmit = () => {
-    if (newComment.trim()) {
-      onAddComment(newComment);
+    if (newComment.trim() && selectedResponsavel) {
+      onAddComment(newComment, selectedResponsavel);
       setNewComment("");
+      setSelectedResponsavel("");
     }
   };
 
@@ -64,7 +75,7 @@ export const CommentThread = ({ x, y, comments, onClose, onAddComment }: Comment
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
-        {comments.map((comment) => (
+        {comments.filter(c => c.content.trim()).map((comment) => (
           <div key={comment.id} className="flex gap-2">
             <Avatar className={cn("h-8 w-8 flex-shrink-0", getAvatarColor(comment.author))}>
               <AvatarFallback className="text-white text-xs">
@@ -87,7 +98,20 @@ export const CommentThread = ({ x, y, comments, onClose, onAddComment }: Comment
         ))}
       </div>
 
-      <div className="p-3 border-t">
+      <div className="p-3 border-t space-y-2">
+        <Select value={selectedResponsavel} onValueChange={setSelectedResponsavel}>
+          <SelectTrigger className="w-full bg-background">
+            <SelectValue placeholder="Selecione o responsável" />
+          </SelectTrigger>
+          <SelectContent className="bg-card border z-[110]">
+            {RESPONSAVEIS.map((responsavel) => (
+              <SelectItem key={responsavel} value={responsavel}>
+                {responsavel}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
         <div className="flex gap-2">
           <Textarea
             value={newComment}
@@ -104,7 +128,7 @@ export const CommentThread = ({ x, y, comments, onClose, onAddComment }: Comment
           <Button
             size="icon"
             onClick={handleSubmit}
-            disabled={!newComment.trim()}
+            disabled={!newComment.trim() || !selectedResponsavel}
             className="flex-shrink-0"
           >
             <Send className="h-4 w-4" />

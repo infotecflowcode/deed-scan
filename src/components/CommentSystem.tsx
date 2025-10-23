@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { CommentMarker } from "./CommentMarker";
 import { CommentThread } from "./CommentThread";
 import { Comment, CommentThread as CommentThreadType } from "@/data/mockData";
-import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
 
 interface CommentSystemProps {
@@ -10,7 +9,6 @@ interface CommentSystemProps {
 }
 
 export const CommentSystem = ({ enabled = true }: CommentSystemProps) => {
-  const { currentUser } = useUser();
   const { toast } = useToast();
   const [threads, setThreads] = useState<CommentThreadType[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -39,7 +37,7 @@ export const CommentSystem = ({ enabled = true }: CommentSystemProps) => {
       const newComment: Comment = {
         id: `comment-${Date.now()}`,
         thread_id: newThreadId,
-        author: currentUser.name,
+        author: "",
         content: "",
         created_at: new Date().toISOString(),
       };
@@ -56,22 +54,22 @@ export const CommentSystem = ({ enabled = true }: CommentSystemProps) => {
 
       toast({
         title: "Comentário criado",
-        description: "Adicione seu comentário",
+        description: "Selecione o responsável e adicione seu comentário",
       });
     };
 
     document.addEventListener("contextmenu", handleContextMenu);
     return () => document.removeEventListener("contextmenu", handleContextMenu);
-  }, [enabled, currentUser, toast]);
+  }, [enabled, toast]);
 
-  const handleAddComment = (threadId: string, content: string) => {
+  const handleAddComment = (threadId: string, content: string, responsavel: string) => {
     setThreads((prev) =>
       prev.map((thread) => {
         if (thread.id === threadId) {
           const newComment: Comment = {
             id: `comment-${Date.now()}`,
             thread_id: threadId,
-            author: currentUser.name,
+            author: responsavel,
             content,
             created_at: new Date().toISOString(),
           };
@@ -130,7 +128,7 @@ export const CommentSystem = ({ enabled = true }: CommentSystemProps) => {
               }
               setActiveThreadId(null);
             }}
-            onAddComment={(content) => handleAddComment(activeThreadId, content)}
+            onAddComment={(content, responsavel) => handleAddComment(activeThreadId, content, responsavel)}
           />
         </div>
       )}
