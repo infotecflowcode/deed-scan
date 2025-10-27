@@ -18,23 +18,39 @@ export const CommentSystem = ({ enabled = true }: CommentSystemProps) => {
   useEffect(() => {
     if (!enabled) return;
 
-    // Load existing comments from Supabase
+    // Load comments for current page only
     const loadExistingComments = async () => {
       try {
-        const existingComments = await commentService.getAllComments();
-        console.log('Loaded existing comments:', existingComments);
+        const currentPage = window.location.pathname;
+
+        // Try to get comments by page, fallback to filtering all comments
+        let pageComments;
+        try {
+          pageComments = await commentService.getCommentsByPage(currentPage);
+        } catch (error) {
+          // If getCommentsByPage fails, get all and filter locally
+          const allComments = await commentService.getAllComments();
+          pageComments = allComments.filter(comment => {
+            const commentPage = comment.pagina || '/';
+            return commentPage === currentPage;
+          });
+        }
+
+        if (pageComments.length === 0) {
+          return;
+        }
 
         // Group comments by thread
         const threadMap = new Map<string, CommentThreadType>();
 
-        existingComments.forEach(comment => {
+        pageComments.forEach(comment => {
           if (!comment.thread) return;
 
           if (!threadMap.has(comment.thread)) {
             threadMap.set(comment.thread, {
               id: comment.thread,
-              x: 100, // Default position, will be overridden
-              y: 100,
+              x: comment.position_x || 100,
+              y: comment.position_y || 100,
               comments: []
             });
           }
@@ -49,15 +65,39 @@ export const CommentSystem = ({ enabled = true }: CommentSystemProps) => {
           });
         });
 
-        if (threadMap.size > 0) {
-          setThreads(Array.from(threadMap.values()));
-        }
+        // Set all threads found in database
+        setThreads(Array.from(threadMap.values()));
+
       } catch (error) {
-        console.error('Error loading existing comments:', error);
+        console.error('Error loading comments:', error);
       }
     };
 
     loadExistingComments();
+
+    // Listen for URL changes to reload comments for new page
+    const handleUrlChange = () => {
+      setThreads([]);
+      setActiveThreadId(null);
+      loadExistingComments();
+    };
+
+    // Listen for browser navigation (back/forward)
+    window.addEventListener('popstate', handleUrlChange);
+
+    // Listen for programmatic navigation
+    const originalPushState = window.history.pushState;
+    const originalReplaceState = window.history.replaceState;
+
+    window.history.pushState = function(...args) {
+      originalPushState.apply(window.history, args);
+      setTimeout(handleUrlChange, 0);
+    };
+
+    window.history.replaceState = function(...args) {
+      originalReplaceState.apply(window.history, args);
+      setTimeout(handleUrlChange, 0);
+    };
 
     const handleContextMenu = (e: MouseEvent) => {
       // Só permite comentário em áreas válidas (não em modais, dialogs, etc)
@@ -74,8 +114,8 @@ export const CommentSystem = ({ enabled = true }: CommentSystemProps) => {
       e.preventDefault();
 
       // Get absolute position on the page
-      const x = e.pageX;
-      const y = e.pageY;
+      const x = Math.round(e.pageX);
+      const y = Math.round(e.pageY);
 
       // Criar novo thread
       const newThreadId = `thread-${Date.now()}`;
@@ -104,12 +144,16 @@ export const CommentSystem = ({ enabled = true }: CommentSystemProps) => {
     };
 
     document.addEventListener("contextmenu", handleContextMenu);
-    return () => document.removeEventListener("contextmenu", handleContextMenu);
+
+    return () => {
+      document.removeEventListener("contextmenu", handleContextMenu);
+      window.removeEventListener('popstate', handleUrlChange);
+      window.history.pushState = originalPushState;
+      window.history.replaceState = originalReplaceState;
+    };
   }, [enabled, toast]);
 
   const handleAddComment = async (threadId: string, content: string, responsavel: string) => {
-    console.log('handleAddComment called with:', { threadId, content, responsavel });
-
     try {
       // Get thread position for saving
       const currentThread = threads.find(t => t.id === threadId);
@@ -118,11 +162,10 @@ export const CommentSystem = ({ enabled = true }: CommentSystemProps) => {
         comentario: content,
         responsavel,
         thread: threadId,
-        position_x: currentThread?.x || 0,
-        position_y: currentThread?.y || 0,
+        position_x: Math.round(currentThread?.x || 100),
+        position_y: Math.round(currentThread?.y || 100),
+        pagina: window.location.pathname,
       });
-
-      console.log('Result from commentService.createComment:', savedComment);
 
       if (savedComment) {
         setThreads((prev) =>

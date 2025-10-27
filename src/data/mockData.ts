@@ -16,6 +16,21 @@ export interface EvaluationCriteria {
   required: boolean;
 }
 
+export interface ServiceLine {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface Contract {
+  id: string;
+  name: string;
+  billingType: "HH" | "BPO" | "ENTREGAVEL";
+  serviceLines: ServiceLine[];
+  createdAt: string;
+  status: "active" | "inactive";
+}
+
 export interface EditLog {
   id: string;
   userId: string;
@@ -35,6 +50,8 @@ export interface Activity {
   collaboratorName: string;
   groupId: string;
   typeId: string;
+  contractId?: string;
+  serviceLineId?: string;
   startDate: string;
   endDate: string;
   status: "pending" | "approved" | "rejected";
@@ -114,6 +131,8 @@ export const activities: Activity[] = [
     observations: "Inspeção completa do sistema BOP, troca de selos hidráulicos e teste de pressão conforme procedimento P-001",
     photos: ["https://images.unsplash.com/photo-1578662996442-48f60103fc96", "https://images.unsplash.com/photo-1581092160562-40aa08e78837"],
     documents: [{ name: "BOP_Inspection_Report.pdf", url: "#" }, { name: "Pressure_Test_Results.pdf", url: "#" }],
+    contractId: "4",
+    serviceLineId: "10",
     approval: {
       approverId: "3",
       approverName: "Ana Rodrigues",
@@ -140,6 +159,8 @@ export const activities: Activity[] = [
     observations: "Inspeção visual e ultrassônica dos risers 1, 2 e 3. Identificadas pequenas corrosões no riser 2 que necessitam acompanhamento",
     photos: ["https://images.unsplash.com/photo-1565008447742-97f6f38c985c"],
     documents: [{ name: "Riser_Inspection_Checklist.pdf", url: "#" }],
+    contractId: "4",
+    serviceLineId: "12",
   },
   {
     id: "3",
@@ -154,6 +175,8 @@ export const activities: Activity[] = [
     observations: "Limpeza interna dos tanques T-101 e T-102. Remoção de sedimentos e borra. Preparação para inspeção interna",
     photos: [],
     documents: [],
+    contractId: "4",
+    serviceLineId: "11",
   },
   {
     id: "4",
@@ -168,6 +191,8 @@ export const activities: Activity[] = [
     observations: "Calibração de 15 transmissores de pressão da área de processo. Todos dentro da tolerância especificada",
     photos: ["https://images.unsplash.com/photo-1518709268805-4e9042af2176"],
     documents: [{ name: "Calibration_Certificates.pdf", url: "#" }],
+    contractId: "1",
+    serviceLineId: "2",
     approval: {
       approverId: "3",
       approverName: "Ana Rodrigues",
@@ -204,6 +229,8 @@ export const activities: Activity[] = [
       ],
       rejectionReason: "Vazamento não foi comunicado imediatamente conforme procedimento de emergência",
     },
+    contractId: "2",
+    serviceLineId: "5",
   },
   {
     id: "6",
@@ -218,5 +245,58 @@ export const activities: Activity[] = [
     observations: "Teste de pressão das linhas HP-001 a HP-005. Pressão de teste: 1.5x pressão de trabalho",
     photos: [],
     documents: [],
+    contractId: "3",
+    serviceLineId: "7",
+  },
+];
+
+export const contracts: Contract[] = [
+  {
+    id: "1",
+    name: "Projeto Modernização IT",
+    billingType: "HH",
+    serviceLines: [
+      { id: "1", name: "Desenvolvimento de Software", description: "Desenvolvimento e manutenção de sistemas" },
+      { id: "2", name: "Infraestrutura de TI", description: "Gestão e manutenção da infraestrutura tecnológica" },
+      { id: "3", name: "Consultoria Técnica", description: "Consultoria especializada em tecnologia" },
+    ],
+    createdAt: "2025-01-15T10:00:00Z",
+    status: "active",
+  },
+  {
+    id: "2",
+    name: "Suporte Operacional",
+    billingType: "BPO",
+    serviceLines: [
+      { id: "4", name: "Help Desk", description: "Suporte técnico aos usuários" },
+      { id: "5", name: "Monitoramento", description: "Monitoramento 24/7 dos sistemas" },
+      { id: "6", name: "Backup e Recovery", description: "Gestão de backup e recuperação de dados" },
+    ],
+    createdAt: "2025-02-01T09:00:00Z",
+    status: "active",
+  },
+  {
+    id: "3",
+    name: "Desenvolvimento Web",
+    billingType: "ENTREGAVEL",
+    serviceLines: [
+      { id: "7", name: "Frontend Development", description: "Desenvolvimento de interfaces web" },
+      { id: "8", name: "Backend Development", description: "Desenvolvimento de APIs e serviços" },
+      { id: "9", name: "DevOps", description: "Automação e deploy de aplicações" },
+    ],
+    createdAt: "2025-03-10T14:00:00Z",
+    status: "active",
+  },
+  {
+    id: "4",
+    name: "Manutenção Offshore",
+    billingType: "HH",
+    serviceLines: [
+      { id: "10", name: "Manutenção Preventiva", description: "Manutenção programada de equipamentos" },
+      { id: "11", name: "Manutenção Corretiva", description: "Reparos emergenciais" },
+      { id: "12", name: "Inspeção de Segurança", description: "Inspeções periódicas de segurança" },
+    ],
+    createdAt: "2025-01-20T08:00:00Z",
+    status: "active",
   },
 ];

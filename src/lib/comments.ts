@@ -6,6 +6,9 @@ export interface SupabaseComment {
   comentario: string | null
   responsavel: string | null
   thread: string | null
+  position_x?: number | null
+  position_y?: number | null
+  pagina?: string | null
 }
 
 export interface CommentData {
@@ -14,27 +17,54 @@ export interface CommentData {
   thread: string
   position_x?: number
   position_y?: number
+  pagina?: string
 }
 
 export const commentService = {
   async createComment(data: CommentData): Promise<SupabaseComment | null> {
     try {
-      console.log('Attempting to create comment with data:', data)
+
+      // Create a base data object with required fields
+      const baseData = {
+        comentario: data.comentario,
+        responsavel: data.responsavel,
+        thread: data.thread
+      };
+
+      // Only add optional fields if they exist in the table
+      const insertData: any = { ...baseData };
+
+      // Add position and page data (always include these now)
+      insertData.position_x = data.position_x || 100;
+      insertData.position_y = data.position_y || 100;
+      insertData.pagina = data.pagina || '/';
 
       const { data: comment, error } = await supabase
         .from('comentarios')
-        .insert([data])
+        .insert([insertData])
         .select()
         .single()
 
-      console.log('Supabase response:', { comment, error })
-
       if (error) {
         console.error('Error creating comment:', error)
+        // If error is about missing columns, try with just base data
+        if (error.message.includes('position_x') || error.message.includes('position_y') || error.message.includes('pagina')) {
+          const { data: retryComment, error: retryError } = await supabase
+            .from('comentarios')
+            .insert([baseData])
+            .select()
+            .single()
+
+          if (retryError) {
+            console.error('Retry error:', retryError)
+            return null
+          }
+
+          return retryComment
+        }
         return null
       }
 
-      console.log('Comment created successfully:', comment)
       return comment
     } catch (error) {
       console.error('Exception when creating comment:', error)
@@ -62,6 +92,33 @@ export const commentService = {
     }
   },
 
+  async getCommentsByPage(pagina: string): Promise<SupabaseComment[]> {
+    try {
+      const { data: comments, error } = await supabase
+        .from('comentarios')
+        .select('*')
+        .eq('pagina', pagina)
+        .order('created_at', { ascending: true })
+
+      if (error) {
+        // If column doesn't exist, fallback to getting all and filtering locally
+        if (error.message.includes('pagina')) {
+          const allComments = await this.getAllComments()
+          return allComments.filter(comment => {
+            const commentPage = comment.pagina || '/';
+            return commentPage === pagina;
+          })
+        }
+        return []
+      }
+
+      return comments || []
+    } catch (error) {
+      console.error('Error fetching comments by page:', error)
+      return []
+    }
+  },
+
   async getAllComments(): Promise<SupabaseComment[]> {
     try {
       const { data: comments, error } = await supabase
@@ -76,14 +133,13 @@ export const commentService = {
 
       return comments || []
     } catch (error) {
-      console.error('Error fetching all comments:', error)
+      console.error('Exception in getAllComments:', error)
       return []
     }
   },
 
   async deleteComment(commentId: number): Promise<boolean> {
     try {
-      console.log('Attempting to delete comment with id:', commentId)
 
       const { error } = await supabase
         .from('comentarios')
@@ -95,7 +151,6 @@ export const commentService = {
         return false
       }
 
-      console.log('Comment deleted successfully')
       return true
     } catch (error) {
       console.error('Exception when deleting comment:', error)

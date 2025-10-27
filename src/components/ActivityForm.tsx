@@ -22,6 +22,8 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
     collaborator: "",
     group: "",
     type: "",
+    contract: "",
+    serviceLine: "",
     startDate: "",
     startTime: "",
     endDate: "",
@@ -132,6 +134,59 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
               <SelectItem value="preventiva">Preventiva</SelectItem>
               <SelectItem value="corretiva">Corretiva</SelectItem>
               <SelectItem value="instalacao">Instalação</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="contract">Contrato *</Label>
+          <Select
+            value={formData.contract}
+            onValueChange={(value) => setFormData({ ...formData, contract: value, serviceLine: "" })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o contrato" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="projeto-modernizacao">Projeto Modernização IT</SelectItem>
+              <SelectItem value="suporte-operacional">Suporte Operacional</SelectItem>
+              <SelectItem value="desenvolvimento-web">Desenvolvimento Web</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="serviceLine">Linha de Serviço *</Label>
+          <Select
+            value={formData.serviceLine}
+            onValueChange={(value) => setFormData({ ...formData, serviceLine: value })}
+            disabled={!formData.contract}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione a linha de serviço" />
+            </SelectTrigger>
+            <SelectContent>
+              {formData.contract === "projeto-modernizacao" && (
+                <>
+                  <SelectItem value="desenvolvimento">Desenvolvimento de Software</SelectItem>
+                  <SelectItem value="infraestrutura">Infraestrutura de TI</SelectItem>
+                  <SelectItem value="consultoria">Consultoria Técnica</SelectItem>
+                </>
+              )}
+              {formData.contract === "suporte-operacional" && (
+                <>
+                  <SelectItem value="helpdesk">Help Desk</SelectItem>
+                  <SelectItem value="monitoramento">Monitoramento</SelectItem>
+                  <SelectItem value="backup">Backup e Recovery</SelectItem>
+                </>
+              )}
+              {formData.contract === "desenvolvimento-web" && (
+                <>
+                  <SelectItem value="frontend">Frontend Development</SelectItem>
+                  <SelectItem value="backend">Backend Development</SelectItem>
+                  <SelectItem value="devops">DevOps</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
         </div>

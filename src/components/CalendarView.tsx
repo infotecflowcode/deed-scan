@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { FillingDetailsModal } from "./FillingDetailsModal";
 import {
   Popover,
   PopoverContent,
@@ -18,6 +19,7 @@ import {
 import { Activity, serviceGroups } from "@/data/mockData";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useUser } from "@/contexts/UserContext";
 
 interface CalendarViewProps {
   activities: Activity[];
@@ -27,9 +29,17 @@ interface CalendarViewProps {
 }
 
 export const CalendarView = ({ activities, onViewDetails }: CalendarViewProps) => {
+  const { currentUser } = useUser();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [fillingModalOpen, setFillingModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  // Colaboradores só veem suas próprias atividades
+  const userActivities = currentUser.role === "colaborador"
+    ? activities.filter(a => a.collaboratorId === currentUser.id)
+    : activities;
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -42,10 +52,51 @@ export const CalendarView = ({ activities, onViewDetails }: CalendarViewProps) =
   });
 
   const getActivitiesForDate = (date: Date) => {
-    return activities.filter(activity => {
+    return userActivities.filter(activity => {
       const activityDate = new Date(activity.startDate);
       return isSameDay(activityDate, date);
     });
+  };
+
+  const getFillingIndicators = (date: Date) => {
+    const dayActivities = getActivitiesForDate(date);
+    const expectedEmployees = 5; // Mock: número esperado de funcionários
+    const actualFillings = dayActivities.length;
+
+    return {
+      expected: expectedEmployees,
+      actual: actualFillings,
+      percentage: expectedEmployees > 0 ? Math.round((actualFillings / expectedEmployees) * 100) : 0
+    };
+  };
+
+  const getEmployeesForDate = (date: Date) => {
+    const dayActivities = getActivitiesForDate(date);
+    const filledEmployees = dayActivities.map(activity => ({
+      id: activity.collaboratorId,
+      name: activity.collaboratorName,
+      email: `${activity.collaboratorName.toLowerCase().replace(' ', '.')}@empresa.com`,
+      filled: true
+    }));
+
+    // Mock de funcionários que não preencheram
+    const allEmployees = [
+      { id: "1", name: "Carlos Pereira", email: "carlos.pereira@empresa.com" },
+      { id: "2", name: "Roberto Santos", email: "roberto.santos@empresa.com" },
+      { id: "3", name: "Paulo Mendes", email: "paulo.mendes@empresa.com" },
+      { id: "4", name: "Maria Oliveira", email: "maria.oliveira@empresa.com" },
+      { id: "5", name: "José Lima", email: "jose.lima@empresa.com" },
+    ];
+
+    return allEmployees.map(emp => ({
+      ...emp,
+      filled: filledEmployees.some(filled => filled.id === emp.id)
+    }));
+  };
+
+  const handleFillingClick = (date: Date) => {
+    setSelectedDate(date);
+    setFillingModalOpen(true);
   };
 
   const getGroupColor = (groupId: string) => {
@@ -173,6 +224,7 @@ export const CalendarView = ({ activities, onViewDetails }: CalendarViewProps) =
             const dayActivities = getActivitiesForDate(day);
             const isCurrentMonth = isSameMonth(day, currentDate);
             const isToday = isSameDay(day, new Date());
+            const fillingIndicators = getFillingIndicators(day);
 
             return (
               <div
@@ -183,10 +235,25 @@ export const CalendarView = ({ activities, onViewDetails }: CalendarViewProps) =
                     : "bg-background"
                 } ${isToday ? "ring-2 ring-primary" : ""}`}
               >
-                <div className={`text-sm font-medium mb-2 ${
-                  isToday ? "text-primary" : ""
-                }`}>
-                  {format(day, "d")}
+                <div className="flex items-center justify-between mb-2">
+                  <div className={`text-sm font-medium ${
+                    isToday ? "text-primary" : ""
+                  }`}>
+                    {format(day, "d")}
+                  </div>
+                  {isCurrentMonth && fillingIndicators.expected > 0 && currentUser.role !== "colaborador" && (
+                    <Badge
+                      variant="outline"
+                      className={`text-xs px-1 py-0 cursor-pointer hover:opacity-80 transition-opacity ${
+                        fillingIndicators.percentage >= 80 ? "bg-green-50 text-green-700 border-green-200" :
+                        fillingIndicators.percentage >= 50 ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
+                        "bg-red-50 text-red-700 border-red-200"
+                      }`}
+                      onClick={() => handleFillingClick(day)}
+                    >
+                      {fillingIndicators.actual}/{fillingIndicators.expected}
+                    </Badge>
+                  )}
                 </div>
 
                 <div className="space-y-1">
@@ -224,21 +291,49 @@ export const CalendarView = ({ activities, onViewDetails }: CalendarViewProps) =
       </Card>
 
       {/* Legenda */}
-      <div className="flex items-center gap-4 text-sm">
-        <span className="font-medium">Status:</span>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-green-500" />
-          <span>Aprovado</span>
+      <div className="space-y-3">
+        <div className="flex items-center gap-4 text-sm">
+          <span className="font-medium">Status:</span>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-green-500" />
+            <span>Aprovado</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-yellow-500" />
+            <span>Pendente</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-red-500" />
+            <span>Rejeitado</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-yellow-500" />
-          <span>Pendente</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-red-500" />
-          <span>Rejeitado</span>
+
+        <div className="flex items-center gap-4 text-sm">
+          <span className="font-medium">Preenchimento:</span>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">3/5</Badge>
+            <span>≥80% (Excelente)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">2/5</Badge>
+            <span>50-79% (Médio)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">1/5</Badge>
+            <span>&lt;50% (Baixo)</span>
+          </div>
         </div>
       </div>
+
+      {/* Modal de detalhes de preenchimento - apenas para admin/fiscal */}
+      {selectedDate && currentUser.role !== "colaborador" && (
+        <FillingDetailsModal
+          open={fillingModalOpen}
+          onOpenChange={setFillingModalOpen}
+          date={selectedDate}
+          employees={getEmployeesForDate(selectedDate)}
+        />
+      )}
     </div>
   );
 };

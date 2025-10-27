@@ -18,6 +18,8 @@ import { UserSelector } from "@/components/UserSelector";
 import { CommentSystem } from "@/components/CommentSystem";
 import { CalendarView } from "@/components/CalendarView";
 import { GanttTimeline } from "@/components/GanttTimeline";
+import { KanbanView } from "@/components/KanbanView";
+import { EvidenceReportExport } from "@/components/EvidenceReportExport";
 import { ActivityFilters, ActivityFiltersType } from "@/components/ActivityFilters";
 import { ActivityEditModal } from "@/components/ActivityEditModal";
 import { EditLog } from "@/data/mockData";
@@ -80,6 +82,29 @@ const Index = () => {
       )
     );
   };
+
+  const handleDuplicate = (activity: Activity) => {
+    const duplicatedActivity: Activity = {
+      ...activity,
+      id: String(activities.length + 1),
+      title: `${activity.title} (Cópia)`,
+      status: "pending",
+      startDate: new Date().toISOString(),
+      endDate: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(), // +8 hours
+      approval: undefined,
+      editHistory: [],
+      photos: [],
+      documents: [],
+      observations: "",
+    };
+
+    setActivities(prev => [...prev, duplicatedActivity]);
+    toast({
+      title: "Atividade duplicada",
+      description: "Uma nova atividade foi criada baseada no modelo selecionado.",
+    });
+  };
+
 
   const filteredActivities = activities.filter(activity => {
     // Filter by user role
@@ -154,11 +179,12 @@ const Index = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full max-w-3xl grid-cols-4">
+          <TabsList className="grid w-full max-w-4xl grid-cols-5">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="listagem">Listagem</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="calendar">Calendário</TabsTrigger>
+            <TabsTrigger value="kanban">Kanban</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-4">
@@ -173,11 +199,14 @@ const Index = () => {
                   Visualize e gerencie todas as atividades registradas
                 </p>
               </div>
-              <ActivityFilters
-                activities={activities}
-                filters={filters}
-                onFiltersChange={setFilters}
-              />
+              <div className="flex items-center gap-2">
+                <EvidenceReportExport activities={filteredActivities} />
+                <ActivityFilters
+                  activities={activities}
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                />
+              </div>
             </div>
             <ActivityTimeline
               activities={filteredActivities}
@@ -195,7 +224,8 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="timeline" className="space-y-4">
-            <div className="flex items-center justify-end mb-4">
+            <div className="flex items-center justify-end gap-2 mb-4">
+              <EvidenceReportExport activities={filteredActivities} />
               <ActivityFilters
                 activities={activities}
                 filters={filters}
@@ -217,7 +247,8 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="calendar" className="space-y-4">
-            <div className="flex items-center justify-end mb-4">
+            <div className="flex items-center justify-end gap-2 mb-4">
+              <EvidenceReportExport activities={filteredActivities} />
               <ActivityFilters
                 activities={activities}
                 filters={filters}
@@ -234,6 +265,31 @@ const Index = () => {
                 setSelectedActivity(activity);
                 setApprovalOpen(true);
               }}
+              canApprove={currentUser.role === "fiscal" || currentUser.role === "admin"}
+            />
+          </TabsContent>
+
+          <TabsContent value="kanban" className="space-y-4">
+            <div className="flex items-center justify-end gap-2 mb-4">
+              <EvidenceReportExport activities={filteredActivities} />
+              <ActivityFilters
+                activities={activities}
+                filters={filters}
+                onFiltersChange={setFilters}
+              />
+            </div>
+            <KanbanView
+              activities={filteredActivities}
+              onViewDetails={(activity) => {
+                setSelectedActivity(activity);
+                setDetailsOpen(true);
+              }}
+              onEdit={handleEdit}
+              onApprove={(activity) => {
+                setSelectedActivity(activity);
+                setApprovalOpen(true);
+              }}
+              onDuplicate={handleDuplicate}
               canApprove={currentUser.role === "fiscal" || currentUser.role === "admin"}
             />
           </TabsContent>

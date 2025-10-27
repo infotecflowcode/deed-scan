@@ -77,9 +77,12 @@ export const ActivityTimeline = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os status</SelectItem>
-            <SelectItem value="pending">Pendente</SelectItem>
-            <SelectItem value="approved">Aprovado</SelectItem>
-            <SelectItem value="rejected">Reprovado</SelectItem>
+            <SelectItem value="pending">🟡 Pendente</SelectItem>
+            <SelectItem value="approved">🟢 Aprovado</SelectItem>
+            <SelectItem value="rejected">🔴 Rejeitado</SelectItem>
+            <SelectItem value="in-review">🔵 Em Revisão</SelectItem>
+            <SelectItem value="on-hold">🟠 Em Espera</SelectItem>
+            <SelectItem value="cancelled">⚫ Cancelado</SelectItem>
           </SelectContent>
         </Select>
 

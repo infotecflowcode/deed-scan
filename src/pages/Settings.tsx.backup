@@ -1,0 +1,1118 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Edit, Trash2, ArrowLeft } from "lucide-react";
+import { serviceGroups, activityTypes, evaluationCriteria, ServiceGroup, ActivityType, EvaluationCriteria } from "@/data/mockData";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { UserSelector } from "@/components/UserSelector";
+import { CommentSystem } from "@/components/CommentSystem";
+
+export default function Settings() {
+  const { toast } = useToast();
+  const [groups, setGroups] = useState<ServiceGroup[]>(serviceGroups);
+  const [types, setTypes] = useState<ActivityType[]>(activityTypes);
+  const [criteria, setCriteria] = useState<EvaluationCriteria[]>(evaluationCriteria);
+  const [newType, setNewType] = useState("");
+
+  const handleAddType = () => {
+    if (!newType.trim()) return;
+    setTypes([...types, { id: String(types.length + 1), name: newType }]);
+    setNewType("");
+    toast({ title: "Tipo adicionado com sucesso!" });
+  };
+
+  const handleDeleteType = (id: string) => {
+    setTypes(types.filter(t => t.id !== id));
+    toast({ title: "Tipo removido com sucesso!" });
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-card">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link to="/">
+                <Button variant="ghost" size="icon">
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold">Configurações</h1>
+                <p className="text-sm text-muted-foreground">
+                  Gerencie grupos, tipos, critérios e usuários
+                </p>
+              </div>
+            </div>
+            <UserSelector />
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <Tabs defaultValue="groups" className="space-y-6">
+          <TabsList className="grid w-full max-w-3xl grid-cols-5">
+            <TabsTrigger value="groups">Grupos</TabsTrigger>
+            <TabsTrigger value="types">Tipos</TabsTrigger>
+            <TabsTrigger value="criteria">Critérios</TabsTrigger>
+            <TabsTrigger value="contracts">Contratos</TabsTrigger>
+            <TabsTrigger value="users">Usuários</TabsTrigger>
+          </TabsList>
+
+          {/* GRUPOS DE SERVIÇO */}
+          <TabsContent value="groups" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Grupos de Serviço</h2>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Novo Grupo
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Adicionar Grupo de Serviço</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Nome do Grupo</Label>
+                      <Input placeholder="Ex: Manutenção" />
+                    </div>
+                    <div>
+                      <Label>Cor</Label>
+                      <Input type="color" defaultValue="#3B82F6" />
+                    </div>
+                    <Button className="w-full">Salvar</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {groups.map((group) => (
+                <div
+                  key={group.id}
+                  className="border rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-4 h-4 rounded-full"
+                      style={{ backgroundColor: group.color }}
+                    />
+                    <span className="font-medium">{group.name}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="icon">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon">
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* TIPOS DE ATIVIDADE */}
+          <TabsContent value="types" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Tipos de Atividade</h2>
+            </div>
+            <div className="flex gap-2 mb-4">
+              <Input
+                placeholder="Novo tipo de atividade..."
+                value={newType}
+                onChange={(e) => setNewType(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleAddType()}
+              />
+              <Button onClick={handleAddType}>
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {types.map((type) => (
+                <div
+                  key={type.id}
+                  className="border rounded-lg p-3 flex items-center justify-between hover:bg-muted/50 transition-colors"
+                >
+                  <span>{type.name}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDeleteType(type.id)}
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* CRITÉRIOS DE AVALIAÇÃO */}
+          <TabsContent value="criteria" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Critérios de Avaliação</h2>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Novo Critério
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Adicionar Critério</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Nome do Critério</Label>
+                      <Input placeholder="Ex: Qualidade do Trabalho" />
+                    </div>
+                    <div>
+                      <Label>Nota Máxima</Label>
+                      <Input type="number" defaultValue={5} min={1} max={10} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="required" />
+                      <Label htmlFor="required">Obrigatório</Label>
+                    </div>
+                    <Button className="w-full">Salvar</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <div className="space-y-3">
+              {criteria.map((criterion) => (
+                <div
+                  key={criterion.id}
+                  className="border rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium">{criterion.name}</span>
+                    {criterion.required && (
+                      <Badge variant="destructive" className="text-xs">Obrigatório</Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-muted-foreground">
+                      Máx: {criterion.maxScore}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="icon">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon">
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* CONTRATOS */}
+          <TabsContent value="contracts" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Contratos</h2>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Novo Contrato
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Configurar Contrato</DialogTitle>
+                  </DialogHeader>
+
+                  <Tabs defaultValue="atributos" className="w-full">
+                    <TabsList className="grid w-full grid-cols-6">
+                      <TabsTrigger value="atributos">Atributos dos Contratos</TabsTrigger>
+                      <TabsTrigger value="grupos">Grupos e Serviços</TabsTrigger>
+                      <TabsTrigger value="tarefas">Atributos das Tarefas</TabsTrigger>
+                      <TabsTrigger value="informacoes">Informações adicionais</TabsTrigger>
+                      <TabsTrigger value="perfis">Perfis de Acesso</TabsTrigger>
+                      <TabsTrigger value="usuarios">Usuários</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="atributos" className="space-y-6 mt-6">
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Nome do Contrato</Label>
+                            <Input placeholder="Ex: SMA - Santos 4" />
+                          </div>
+                          <div>
+                            <Label>Código</Label>
+                            <Input placeholder="Ex: SMA-004" />
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <h3 className="font-medium text-lg">Configurações de Evidências</h3>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                              <Label htmlFor="evidencias-obrigatorias">Armazenar imagens como evidências</Label>
+                              <Checkbox id="evidencias-obrigatorias" defaultChecked />
+                            </div>
+                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                              <Label htmlFor="insercao-evidencias">Inserção de "evidências" é obrigatória</Label>
+                              <Checkbox id="insercao-evidencias" />
+                            </div>
+                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                              <Label htmlFor="anexar-documentos">Anexar documentos às Atividades</Label>
+                              <Checkbox id="anexar-documentos" />
+                            </div>
+                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                              <Label htmlFor="recursos-obrigatorios">Cadastramento de "recursos utilizados" é obrigatório</Label>
+                              <Checkbox id="recursos-obrigatorios" defaultChecked />
+                            </div>
+                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                              <Label htmlFor="unidades-obrigatorias">Cadastramento de "unidades organizacionais associadas" é obrigatório</Label>
+                              <Checkbox id="unidades-obrigatorias" defaultChecked />
+                            </div>
+                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                              <Label htmlFor="requisitante-obrigatorio">Exigir identificação do Requisitante das Atividades</Label>
+                              <Checkbox id="requisitante-obrigatorio" />
+                            </div>
+                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                              <Label htmlFor="controlar-datas">Controlar datas de previsão do início e do fim das Atividades</Label>
+                              <Checkbox id="controlar-datas" />
+                            </div>
+                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                              <Label htmlFor="substituir-estrelas">Substituir estrelas por números decimais para avaliar as Atividades</Label>
+                              <Checkbox id="substituir-estrelas" />
+                            </div>
+                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                              <Label htmlFor="substituir-media">Substituir média por somatório no resultado das avaliações</Label>
+                              <Checkbox id="substituir-media" />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <h4 className="font-medium mb-3">Controles de status e execução das Atividades</h4>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Label>Anulada</Label>
+                                <select className="border rounded px-2 py-1 text-sm">
+                                  <option>Cancelado</option>
+                                </select>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Label>Medida</Label>
+                                <select className="border rounded px-2 py-1 text-sm">
+                                  <option>Encerrado</option>
+                                </select>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Label>Em elaboração</Label>
+                                <select className="border rounded px-2 py-1 text-sm">
+                                  <option>Não iniciado</option>
+                                </select>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Label>Em andamento</Label>
+                                <select className="border rounded px-2 py-1 text-sm">
+                                  <option>Em execução</option>
+                                </select>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Label>Concluída</Label>
+                                <select className="border rounded px-2 py-1 text-sm">
+                                  <option>Encerrado</option>
+                                </select>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Label>Paralisada</Label>
+                                <select className="border rounded px-2 py-1 text-sm">
+                                  <option>Em pausa</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label>Ativar controle de status das Atividades</Label>
+                              <Checkbox />
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <Label>Ativar controle de execução das Atividades</Label>
+                              <Checkbox />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="grupos" className="space-y-6 mt-6">
+                      <div className="grid grid-cols-2 gap-6">
+                        <div>
+                          <h3 className="font-medium mb-4">Grupos de Serviços</h3>
+                          <div className="space-y-2">
+                            {serviceGroups.map((group) => (
+                              <div key={group.id} className="p-3 border rounded-lg bg-gray-50">
+                                {group.name}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-4 p-3 border border-dashed rounded-lg">
+                            <div className="grid grid-cols-2 gap-2">
+                              <Input placeholder="Código..." />
+                              <Input placeholder="Descrição..." />
+                            </div>
+                            <Button className="mt-2 w-full" variant="outline" size="sm">
+                              Adicionar Grupo
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h3 className="font-medium mb-4">Serviços</h3>
+                          <div className="space-y-2">
+                            <div className="p-3 border rounded-lg bg-gray-50">
+                              SERVIÇOS DE ENGENHARIA NAVAL P/ CONF. LEGAL &...
+                            </div>
+                            <div className="p-3 border rounded-lg bg-gray-50">
+                              SERVIÇOS DE ENGENHARIA MULTIDISCIPLINAR P/ CONF. ...
+                            </div>
+                            <div className="p-3 border rounded-lg bg-gray-50">
+                              SERVIÇOS DE TECNOLOGIA NAVAL P/ CONF. LEGAL & GES...
+                            </div>
+                            <div className="p-3 border rounded-lg bg-gray-50">
+                              SERVIÇOS DE ADMINISTRAÇÃO P/ CONF. LEGAL & GESTÃO
+                            </div>
+                            <div className="p-3 border rounded-lg bg-gray-50">
+                              SERVIÇOS TÉCNICOS ADMINISTRATIVOS P/ CONF. LEGAL ...
+                            </div>
+                          </div>
+                          <div className="mt-4 p-3 border border-dashed rounded-lg">
+                            <div className="grid grid-cols-2 gap-2 mb-2">
+                              <Input placeholder="Código..." />
+                              <Input placeholder="Descrição..." />
+                            </div>
+                            <Input placeholder="Detalhes..." />
+                            <Button className="mt-2 w-full" variant="outline" size="sm">
+                              Adicionar Serviço
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="tarefas" className="space-y-6 mt-6">
+                      <div className="grid grid-cols-3 gap-6">
+                        {/* Tipo */}
+                        <div className="space-y-4">
+                          <h3 className="font-medium">Tipo</h3>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between p-2 border rounded">
+                              <span className="text-sm">Tipo padrão</span>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center justify-between p-2 border rounded">
+                              <span className="text-sm">Desenvolvimento</span>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center justify-between p-2 border rounded">
+                              <span className="text-sm">Requisição funcional</span>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center justify-between p-2 border rounded bg-blue-50">
+                              <span className="text-sm">Testar a qualidade</span>
+                              <Button variant="ghost" size="sm">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Input placeholder="Novo Tipo..." className="text-sm" />
+                            <Button size="sm">Salvar</Button>
+                          </div>
+                        </div>
+
+                        {/* Status */}
+                        <div className="space-y-4">
+                          <h3 className="font-medium">Status</h3>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between p-2 border rounded">
+                              <span className="text-sm">Status padrão</span>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center justify-between p-2 border rounded">
+                              <span className="text-sm">Não iniciado</span>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center justify-between p-2 border rounded">
+                              <span className="text-sm">Em pausa</span>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center justify-between p-2 border rounded bg-blue-50">
+                              <span className="text-sm">Em andamento</span>
+                              <Button variant="ghost" size="sm">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Input placeholder="Descrição..." className="text-sm" />
+                            <Button size="sm">Salvar</Button>
+                          </div>
+                        </div>
+
+                        {/* Avaliações da aprovação */}
+                        <div className="space-y-4">
+                          <h3 className="font-medium">Avaliações da aprovação</h3>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between p-2 border rounded">
+                              <div>
+                                <span className="text-sm">Qualidade da entrega</span>
+                                <span className="text-xs text-muted-foreground ml-2">[1 ... 5]</span>
+                              </div>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center justify-between p-2 border rounded">
+                              <div>
+                                <span className="text-sm">Tempo de entrega</span>
+                                <span className="text-xs text-muted-foreground ml-2">[1 ... 5]</span>
+                              </div>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Input placeholder="Nova avaliação..." className="text-sm flex-1" />
+                            <select className="border rounded px-2 text-sm">
+                              <option>5</option>
+                              <option>10</option>
+                            </select>
+                            <Button size="sm">Salvar</Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-6 mt-8">
+                        {/* Escopo */}
+                        <div className="space-y-4">
+                          <h3 className="font-medium">Escopo</h3>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between p-2 border rounded">
+                              <span className="text-sm">Escopo padrão</span>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center justify-between p-2 border rounded">
+                              <span className="text-sm">Comercial</span>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center justify-between p-2 border rounded">
+                              <span className="text-sm">Operação</span>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center justify-between p-2 border rounded bg-blue-50">
+                              <span className="text-sm">Jurídico</span>
+                              <Button variant="ghost" size="sm">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Input placeholder="Novo Escopo..." className="text-sm" />
+                            <Button size="sm">Salvar</Button>
+                          </div>
+                        </div>
+
+                        {/* Unidade */}
+                        <div className="space-y-4">
+                          <h3 className="font-medium">Unidade</h3>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between p-2 border rounded">
+                              <span className="text-sm">Escritório RJ Centro</span>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center justify-between p-2 border rounded">
+                              <span className="text-sm">Escritório RJ Macaé</span>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Input placeholder="Nova Unidade de Negócios..." className="text-sm" />
+                            <Button size="sm">Salvar</Button>
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="informacoes" className="space-y-6 mt-6">
+                      <div className="text-center text-muted-foreground py-8">
+                        Informações adicionais do contrato
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="perfis" className="space-y-6 mt-6">
+                      <div className="text-center text-muted-foreground py-8">
+                        Configurações de perfis de acesso
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="usuarios" className="space-y-6 mt-6">
+                      <div className="text-center text-muted-foreground py-8">
+                        Gestão de usuários do contrato
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+
+                  <div className="flex justify-end gap-2 pt-4 border-t mt-6">
+                    <Button variant="outline">Cancelar</Button>
+                    <Button>Salvar Contrato</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {/* Lista de contratos existentes */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              {/* Contrato 1 - Configurado */}
+              <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-medium">Projeto Modernização IT</h3>
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-3 gap-2 text-sm font-medium">
+                          <span>Nome do Status</span>
+                          <span>Cor</span>
+                          <span>Ações</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 items-center">
+                          <Input value="Pendente" />
+                          <div className="flex items-center gap-2">
+                            <Input type="color" defaultValue="#f59e0b" className="w-12 h-8" />
+                            <span className="text-xs text-muted-foreground">Amarelo</span>
+                          </div>
+                          <Button variant="ghost" size="icon">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 items-center">
+                          <Input value="Aprovado" />
+                          <div className="flex items-center gap-2">
+                            <Input type="color" defaultValue="#10b981" className="w-12 h-8" />
+                            <span className="text-xs text-muted-foreground">Verde</span>
+                          </div>
+                          <Button variant="ghost" size="icon">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 items-center">
+                          <Input value="Rejeitado" />
+                          <div className="flex items-center gap-2">
+                            <Input type="color" defaultValue="#ef4444" className="w-12 h-8" />
+                            <span className="text-xs text-muted-foreground">Vermelho</span>
+                          </div>
+                          <Button variant="ghost" size="icon">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 items-center">
+                          <Input placeholder="Ex: Em Revisão" />
+                          <div className="flex items-center gap-2">
+                            <Input type="color" defaultValue="#6366f1" className="w-12 h-8" />
+                            <span className="text-xs text-muted-foreground">Azul</span>
+                          </div>
+                          <Button variant="ghost" size="icon">
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <Button variant="outline" size="sm">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Adicionar Status
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Tipos de Avaliação */}
+                    <div>
+                      <h3 className="font-medium mb-3">Tipos de Avaliação</h3>
+                      <div className="space-y-4">
+                        <div className="border rounded-lg p-4">
+                          <div className="flex justify-between items-center mb-3">
+                            <Label className="font-medium">Qualidade do Trabalho</Label>
+                            <Button variant="ghost" size="sm">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label className="text-sm">Tipo de Avaliação</Label>
+                              <select className="w-full border rounded-md p-2 text-sm">
+                                <option value="numerico">Numérico (1-10)</option>
+                                <option value="estrelas">Estrelas (1-5)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <Label className="text-sm">Obrigatória</Label>
+                              <div className="flex items-center mt-2">
+                                <Checkbox defaultChecked />
+                                <Label className="ml-2 text-sm">Sim</Label>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-3">
+                            <Label className="text-sm">Como será avaliado</Label>
+                            <div className="flex gap-4 mt-2">
+                              <div className="flex items-center space-x-2">
+                                <Checkbox defaultChecked />
+                                <Label className="text-sm">Nota (1-10)</Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Checkbox defaultChecked />
+                                <Label className="text-sm">Observações</Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Checkbox />
+                                <Label className="text-sm">Anexos</Label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="border rounded-lg p-4">
+                          <div className="flex justify-between items-center mb-3">
+                            <Label className="font-medium">Conformidade com Normas</Label>
+                            <Button variant="ghost" size="sm">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label className="text-sm">Tipo de Avaliação</Label>
+                              <select className="w-full border rounded-md p-2 text-sm">
+                                <option value="estrelas">Estrelas (1-5)</option>
+                                <option value="numerico">Numérico (1-10)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <Label className="text-sm">Obrigatória</Label>
+                              <div className="flex items-center mt-2">
+                                <Checkbox defaultChecked />
+                                <Label className="ml-2 text-sm">Sim</Label>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-3">
+                            <Label className="text-sm">Como será avaliado</Label>
+                            <div className="flex gap-4 mt-2">
+                              <div className="flex items-center space-x-2">
+                                <Checkbox defaultChecked />
+                                <Label className="text-sm">Estrelas (1-5)</Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Checkbox />
+                                <Label className="text-sm">Observações</Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Checkbox defaultChecked />
+                                <Label className="text-sm">Justificativa se menos de 3 estrelas</Label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="border rounded-lg p-4 border-dashed">
+                          <div className="space-y-3">
+                            <div>
+                              <Label>Nome do Tipo de Avaliação</Label>
+                              <Input placeholder="Ex: Segurança Operacional" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label className="text-sm">Tipo de Avaliação</Label>
+                                <select className="w-full border rounded-md p-2 text-sm">
+                                  <option value="numerico">Numérico (1-10)</option>
+                                  <option value="estrelas">Estrelas (1-5)</option>
+                                  <option value="sim-nao">Sim/Não</option>
+                                  <option value="percentual">Percentual</option>
+                                </select>
+                              </div>
+                              <div>
+                                <Label className="text-sm">Obrigatória</Label>
+                                <div className="flex items-center mt-2">
+                                  <Checkbox />
+                                  <Label className="ml-2 text-sm">Sim</Label>
+                                </div>
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-sm">Como será avaliado</Label>
+                              <div className="flex gap-4 mt-2">
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox />
+                                  <Label className="text-sm">Nota</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox />
+                                  <Label className="text-sm">Observações</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox />
+                                  <Label className="text-sm">Anexos</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox />
+                                  <Label className="text-sm">Justificativa</Label>
+                                </div>
+                              </div>
+                            </div>
+                            <Button variant="outline" size="sm">
+                              <Plus className="w-4 h-4 mr-2" />
+                              Adicionar Tipo de Avaliação
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Grupos de Trabalho e Linhas de Serviço */}
+                    <div>
+                      <h3 className="font-medium mb-3">Grupos de Trabalho e Linhas de Serviço</h3>
+                      <div className="space-y-4">
+                        <div className="border rounded-lg p-4">
+                          <div className="flex justify-between items-center mb-3">
+                            <Label className="font-medium">Grupo: Desenvolvimento</Label>
+                            <Button variant="ghost" size="sm">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="grid grid-cols-3 gap-2 text-sm">
+                              <span className="font-medium">Linha de Serviço</span>
+                              <span className="font-medium">Código</span>
+                              <span className="font-medium">Valor</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 items-center">
+                              <Input placeholder="Frontend Development" />
+                              <Input placeholder="DEV-001" />
+                              <Input placeholder="R$ 150,00/h" />
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 items-center">
+                              <Input placeholder="Backend Development" />
+                              <Input placeholder="DEV-002" />
+                              <Input placeholder="R$ 180,00/h" />
+                            </div>
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Adicionar Grupo de Trabalho
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Campos Customizáveis */}
+                    <div>
+                      <h3 className="font-medium mb-3">Campos Customizáveis</h3>
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-4 gap-2 text-sm font-medium">
+                          <span>Nome do Campo</span>
+                          <span>Tipo</span>
+                          <span>Obrigatório</span>
+                          <span>Ações</span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2 items-center">
+                          <Input placeholder="Ex: Prioridade" />
+                          <select className="border rounded-md p-2">
+                            <option value="texto">Texto</option>
+                            <option value="numero">Número</option>
+                            <option value="decimal">Decimal</option>
+                            <option value="percentual">Percentual</option>
+                            <option value="rating">Rating 1-5</option>
+                            <option value="sim-nao">Sim/Não</option>
+                            <option value="data-hora">Data/Hora</option>
+                            <option value="usuarios">Usuários</option>
+                            <option value="tabela-custom">Tabela Customizada</option>
+                          </select>
+                          <Checkbox />
+                          <Button variant="ghost" size="icon">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <Button variant="outline" size="sm">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Adicionar Campo Customizado
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Tabelas Customizadas */}
+                    <div>
+                      <h3 className="font-medium mb-3">Tabelas Customizadas</h3>
+                      <div className="space-y-3">
+                        <div className="border rounded-lg p-3">
+                          <div className="flex justify-between items-center mb-2">
+                            <Label className="font-medium">Tabela: Prioridades</Label>
+                            <Button variant="ghost" size="sm">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span>Baixa</span>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Média</span>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Alta</span>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Criar Nova Tabela Customizada
+                        </Button>
+                      </div>
+                    </div>
+
+                    <Button className="w-full">Salvar Configurações do Contrato</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              {/* Contrato 1 - Configurado */}
+              <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-medium">Projeto Modernização IT</h3>
+                    <div className="flex gap-2 mt-1">
+                      <Badge variant="outline">HH</Badge>
+                      <Badge variant="secondary" className="text-xs">⭐ Estrelas</Badge>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="icon">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon">
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Grupos/Linhas:</p>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="secondary" className="text-xs">Desenvolvimento (3)</Badge>
+                      <Badge variant="secondary" className="text-xs">Infraestrutura (2)</Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Configurações:</p>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="outline" className="text-xs bg-green-50 text-green-700">📷 Evidências</Badge>
+                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">📄 Documentos</Badge>
+                      <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">🔧 Recursos</Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Campos Custom: 3</p>
+                    <p className="text-sm text-muted-foreground">Status: 4 | Avaliações: 3</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contrato 2 - Básico */}
+              <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-medium">Suporte Operacional</h3>
+                    <div className="flex gap-2 mt-1">
+                      <Badge variant="outline">BPO</Badge>
+                      <Badge variant="secondary" className="text-xs">🔢 Numérico</Badge>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="icon">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon">
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Grupos/Linhas:</p>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="secondary" className="text-xs">Suporte (4)</Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Configurações:</p>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="outline" className="text-xs bg-gray-50 text-gray-500">📷 Evidências (Opcional)</Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Campos Custom: 1</p>
+                    <p className="text-sm text-muted-foreground">Status: 3 | Avaliações: 2</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contrato 3 - Complexo */}
+              <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-medium">Manutenção Offshore</h3>
+                    <div className="flex gap-2 mt-1">
+                      <Badge variant="outline">Entregável</Badge>
+                      <Badge variant="secondary" className="text-xs">📊 Média</Badge>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="icon">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon">
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Grupos/Linhas:</p>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="secondary" className="text-xs">Manutenção (5)</Badge>
+                      <Badge variant="secondary" className="text-xs">Inspeção (3)</Badge>
+                      <Badge variant="secondary" className="text-xs">Emergência (2)</Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Configurações:</p>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="outline" className="text-xs bg-red-50 text-red-700">📷 Evidências</Badge>
+                      <Badge variant="outline" className="text-xs bg-red-50 text-red-700">📄 Documentos</Badge>
+                      <Badge variant="outline" className="text-xs bg-red-50 text-red-700">🏢 Unidade</Badge>
+                      <Badge variant="outline" className="text-xs bg-red-50 text-red-700">👤 Requisitante</Badge>
+                      <Badge variant="outline" className="text-xs bg-red-50 text-red-700">📅 Datas</Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Campos Custom: 8</p>
+                    <p className="text-sm text-muted-foreground">Status: 6 | Avaliações: 5</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* USUÁRIOS */}
+          <TabsContent value="users" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Usuários</h2>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Novo Usuário
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Cadastrar Usuário</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Nome</Label>
+                      <Input placeholder="Nome completo" />
+                    </div>
+                    <div>
+                      <Label>Email</Label>
+                      <Input type="email" placeholder="email@example.com" />
+                    </div>
+                    <div>
+                      <Label>Perfil</Label>
+                      <select className="w-full border rounded-md p-2">
+                        <option>Colaborador</option>
+                        <option>Líder</option>
+                        <option>Fiscal</option>
+                        <option>Admin</option>
+                      </select>
+                    </div>
+                    <Button className="w-full">Enviar Convite</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <div className="text-center py-8 text-muted-foreground">
+              <p>Lista de usuários será implementada aqui</p>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </main>
+
+      <CommentSystem enabled={true} />
+    </div>
+  );
+}

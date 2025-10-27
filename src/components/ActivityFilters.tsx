@@ -28,9 +28,12 @@ export const ActivityFilters = ({ activities, filters, onFiltersChange }: Activi
   const [isOpen, setIsOpen] = useState(false);
 
   const statusOptions = [
-    { value: "pending", label: "Pendente", color: "bg-yellow-500" },
-    { value: "approved", label: "Aprovado", color: "bg-green-500" },
-    { value: "rejected", label: "Rejeitado", color: "bg-red-500" },
+    { value: "pending", label: "🟡 Pendente", color: "bg-yellow-500" },
+    { value: "approved", label: "🟢 Aprovado", color: "bg-green-500" },
+    { value: "rejected", label: "🔴 Rejeitado", color: "bg-red-500" },
+    { value: "in-review", label: "🔵 Em Revisão", color: "bg-blue-500" },
+    { value: "on-hold", label: "🟠 Em Espera", color: "bg-orange-500" },
+    { value: "cancelled", label: "⚫ Cancelado", color: "bg-gray-500" },
   ];
 
   const groupOptions = serviceGroups.map(group => ({
