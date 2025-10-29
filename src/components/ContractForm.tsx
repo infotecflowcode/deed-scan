@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Edit2, Save, X } from "lucide-react";
-import { Contract, ServiceGroup, ServiceLine, ContractConfig } from "@/data/mockData";
+import { Contract, ServiceGroup, ServiceLine, ContractConfig, DynamicField } from "@/data/mockData";
+import { ContractDynamicFields } from "./ContractDynamicFields";
 
 interface ContractFormProps {
   contract?: Contract;
@@ -36,6 +37,7 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
 
   const [serviceGroups, setServiceGroups] = useState<ServiceGroup[]>([]);
   const [serviceLines, setServiceLines] = useState<ServiceLine[]>([]);
+  const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [editingLine, setEditingLine] = useState<string | null>(null);
 
@@ -48,6 +50,7 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
       });
       setServiceGroups(contract.serviceGroups || []);
       setServiceLines(contract.serviceLines || []);
+      setDynamicFields(contract.dynamicFields || []);
     }
   }, [contract]);
 
@@ -59,6 +62,7 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
         billingType: formData.billingType,
         serviceGroups,
         serviceLines,
+        dynamicFields,
         config: formData.config,
         status: "active",
       });
@@ -148,9 +152,10 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
       </div>
 
       <Tabs defaultValue="groups" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="groups">Grupos de Trabalho</TabsTrigger>
           <TabsTrigger value="lines">Linhas de Serviço</TabsTrigger>
+          <TabsTrigger value="fields">Campos Dinâmicos</TabsTrigger>
           <TabsTrigger value="config">Configurações</TabsTrigger>
         </TabsList>
 
@@ -378,6 +383,13 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="fields" className="space-y-4">
+          <ContractDynamicFields
+            fields={dynamicFields}
+            onFieldsChange={setDynamicFields}
+          />
         </TabsContent>
 
         <TabsContent value="config" className="space-y-4">

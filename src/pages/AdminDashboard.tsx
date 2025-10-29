@@ -539,14 +539,13 @@ const AdminDashboard: React.FC = () => {
 
       {/* Seleção de Contrato e Conteúdo */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full max-w-6xl grid-cols-8">
+        <TabsList className="grid w-full max-w-6xl grid-cols-7">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="contracts">Contratos</TabsTrigger>
           <TabsTrigger value="activities">Atividades</TabsTrigger>
           <TabsTrigger value="groups">Grupos</TabsTrigger>
           <TabsTrigger value="types">Tipos</TabsTrigger>
           <TabsTrigger value="criteria">Critérios</TabsTrigger>
-          <TabsTrigger value="fields">Campos</TabsTrigger>
           <TabsTrigger value="users">Usuários</TabsTrigger>
         </TabsList>
 
@@ -973,11 +972,6 @@ const AdminDashboard: React.FC = () => {
               ))}
             </div>
           )}
-        </TabsContent>
-
-        {/* CAMPOS DINÂMICOS */}
-        <TabsContent value="fields" className="space-y-4">
-          <DynamicFieldEditor />
         </TabsContent>
 
         {/* USUÁRIOS */}

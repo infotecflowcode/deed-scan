@@ -28,6 +28,26 @@ export interface ServiceLine {
   groupId: string; // ID do grupo de trabalho ao qual pertence
 }
 
+export interface DynamicField {
+  id: string;
+  name: string;
+  label: string;
+  type: "text" | "number" | "currency" | "date" | "dropdown" | "multidropdown" | "boolean" | "rating";
+  required: boolean;
+  placeholder?: string;
+  description?: string;
+  options?: { id: string; label: string; value: string }[];
+  min?: number;
+  max?: number;
+  step?: number;
+  validation?: {
+    minLength?: number;
+    maxLength?: number;
+  };
+  order: number;
+  isActive: boolean;
+}
+
 export interface ContractConfig {
   evidenceRequired: boolean;
   documentsRequired: boolean;
@@ -46,6 +66,7 @@ export interface Contract {
   serviceGroups: ServiceGroup[];
   serviceLines: ServiceLine[];
   config: ContractConfig;
+  dynamicFields: DynamicField[];
   createdAt: string;
   status: "active" | "inactive";
 }
@@ -293,6 +314,39 @@ export const contracts: Contract[] = [
       evaluationType: "numeric",
       evaluationResult: "average"
     },
+    dynamicFields: [
+      {
+        id: "field-1",
+        name: "cliente_nome",
+        label: "Nome do Cliente",
+        type: "text",
+        required: true,
+        placeholder: "Digite o nome do cliente",
+        description: "Nome completo do cliente para o projeto",
+        order: 0,
+        isActive: true,
+        validation: {
+          minLength: 3,
+          maxLength: 100
+        }
+      },
+      {
+        id: "field-2",
+        name: "prioridade",
+        label: "Prioridade",
+        type: "dropdown",
+        required: true,
+        description: "Nível de prioridade da atividade",
+        order: 1,
+        isActive: true,
+        options: [
+          { id: "opt-1", label: "Baixa", value: "baixa" },
+          { id: "opt-2", label: "Média", value: "media" },
+          { id: "opt-3", label: "Alta", value: "alta" },
+          { id: "opt-4", label: "Crítica", value: "critica" }
+        ]
+      }
+    ],
     createdAt: "2025-01-15T10:00:00Z",
     status: "active",
   },
@@ -317,6 +371,7 @@ export const contracts: Contract[] = [
       evaluationType: "stars",
       evaluationResult: "sum"
     },
+    dynamicFields: [],
     createdAt: "2025-02-01T09:00:00Z",
     status: "active",
   },
@@ -343,6 +398,24 @@ export const contracts: Contract[] = [
       evaluationType: "numeric",
       evaluationResult: "average"
     },
+    dynamicFields: [
+      {
+        id: "field-3",
+        name: "tecnologia",
+        label: "Tecnologia Utilizada",
+        type: "multidropdown",
+        required: false,
+        description: "Tecnologias utilizadas no desenvolvimento",
+        order: 0,
+        isActive: true,
+        options: [
+          { id: "opt-5", label: "React", value: "react" },
+          { id: "opt-6", label: "Node.js", value: "nodejs" },
+          { id: "opt-7", label: "TypeScript", value: "typescript" },
+          { id: "opt-8", label: "PostgreSQL", value: "postgresql" }
+        ]
+      }
+    ],
     createdAt: "2025-03-10T14:00:00Z",
     status: "active",
   },
@@ -369,6 +442,36 @@ export const contracts: Contract[] = [
       evaluationType: "numeric",
       evaluationResult: "average"
     },
+    dynamicFields: [
+      {
+        id: "field-4",
+        name: "equipamento",
+        label: "Equipamento",
+        type: "dropdown",
+        required: true,
+        description: "Equipamento que será mantido",
+        order: 0,
+        isActive: true,
+        options: [
+          { id: "opt-9", label: "BOP Stack", value: "bop" },
+          { id: "opt-10", label: "Riser", value: "riser" },
+          { id: "opt-11", label: "Compressor", value: "compressor" },
+          { id: "opt-12", label: "Guindaste", value: "guindaste" }
+        ]
+      },
+      {
+        id: "field-5",
+        name: "urgencia",
+        label: "Urgência",
+        type: "rating",
+        required: true,
+        description: "Nível de urgência da manutenção (1-5)",
+        order: 1,
+        isActive: true,
+        min: 1,
+        max: 5
+      }
+    ],
     createdAt: "2025-01-20T08:00:00Z",
     status: "active",
   },
