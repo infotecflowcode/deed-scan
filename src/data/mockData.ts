@@ -23,13 +23,29 @@ export interface ServiceLine {
   id: string;
   name: string;
   description: string;
+  code: string;
+  value: number; // Valor monetário da linha de serviço
+  groupId: string; // ID do grupo de trabalho ao qual pertence
+}
+
+export interface ContractConfig {
+  evidenceRequired: boolean;
+  documentsRequired: boolean;
+  resourcesRequired: boolean;
+  unitRequired: boolean;
+  demandRequesterRequired: boolean;
+  controlPlannedDates: boolean;
+  evaluationType: "numeric" | "stars";
+  evaluationResult: "average" | "sum";
 }
 
 export interface Contract {
   id: string;
   name: string;
   billingType: "HH" | "BPO" | "ENTREGAVEL";
+  serviceGroups: ServiceGroup[];
   serviceLines: ServiceLine[];
+  config: ContractConfig;
   createdAt: string;
   status: "active" | "inactive";
 }
@@ -258,11 +274,25 @@ export const contracts: Contract[] = [
     id: "1",
     name: "Projeto Modernização IT",
     billingType: "HH",
-    serviceLines: [
-      { id: "1", name: "Desenvolvimento de Software", description: "Desenvolvimento e manutenção de sistemas" },
-      { id: "2", name: "Infraestrutura de TI", description: "Gestão e manutenção da infraestrutura tecnológica" },
-      { id: "3", name: "Consultoria Técnica", description: "Consultoria especializada em tecnologia" },
+    serviceGroups: [
+      { id: "1", name: "Desenvolvimento", color: "#3B82F6", contractId: "1" },
+      { id: "2", name: "Infraestrutura", color: "#059669", contractId: "1" },
     ],
+    serviceLines: [
+      { id: "1", name: "Desenvolvimento de Software", description: "Desenvolvimento e manutenção de sistemas", code: "DEV-001", value: 150.00, groupId: "1" },
+      { id: "2", name: "Infraestrutura de TI", description: "Gestão e manutenção da infraestrutura tecnológica", code: "INF-001", value: 120.00, groupId: "2" },
+      { id: "3", name: "Consultoria Técnica", description: "Consultoria especializada em tecnologia", code: "CON-001", value: 200.00, groupId: "1" },
+    ],
+    config: {
+      evidenceRequired: true,
+      documentsRequired: true,
+      resourcesRequired: false,
+      unitRequired: true,
+      demandRequesterRequired: true,
+      controlPlannedDates: true,
+      evaluationType: "numeric",
+      evaluationResult: "average"
+    },
     createdAt: "2025-01-15T10:00:00Z",
     status: "active",
   },
@@ -270,10 +300,23 @@ export const contracts: Contract[] = [
     id: "2",
     name: "Suporte Operacional",
     billingType: "BPO",
-    serviceLines: [
-      { id: "4", name: "Help Desk", description: "Suporte técnico aos usuários" },
-      { id: "5", name: "Monitoramento", description: "Monitoramento 24/7 dos sistemas" }
+    serviceGroups: [
+      { id: "3", name: "Suporte", color: "#DC2626", contractId: "2" },
     ],
+    serviceLines: [
+      { id: "4", name: "Help Desk", description: "Suporte técnico aos usuários", code: "HD-001", value: 80.00, groupId: "3" },
+      { id: "5", name: "Monitoramento", description: "Monitoramento 24/7 dos sistemas", code: "MON-001", value: 100.00, groupId: "3" }
+    ],
+    config: {
+      evidenceRequired: false,
+      documentsRequired: false,
+      resourcesRequired: false,
+      unitRequired: false,
+      demandRequesterRequired: false,
+      controlPlannedDates: false,
+      evaluationType: "stars",
+      evaluationResult: "sum"
+    },
     createdAt: "2025-02-01T09:00:00Z",
     status: "active",
   },
@@ -281,11 +324,25 @@ export const contracts: Contract[] = [
     id: "3",
     name: "Desenvolvimento Web",
     billingType: "ENTREGAVEL",
-    serviceLines: [
-      { id: "7", name: "Frontend Development", description: "Desenvolvimento de interfaces web" },
-      { id: "8", name: "Backend Development", description: "Desenvolvimento de APIs e serviços" },
-      { id: "9", name: "DevOps", description: "Automação e deploy de aplicações" },
+    serviceGroups: [
+      { id: "4", name: "Frontend", color: "#7C3AED", contractId: "3" },
+      { id: "5", name: "Backend", color: "#EA580C", contractId: "3" },
     ],
+    serviceLines: [
+      { id: "7", name: "Frontend Development", description: "Desenvolvimento de interfaces web", code: "FE-001", value: 180.00, groupId: "4" },
+      { id: "8", name: "Backend Development", description: "Desenvolvimento de APIs e serviços", code: "BE-001", value: 200.00, groupId: "5" },
+      { id: "9", name: "DevOps", description: "Automação e deploy de aplicações", code: "DO-001", value: 220.00, groupId: "5" },
+    ],
+    config: {
+      evidenceRequired: true,
+      documentsRequired: true,
+      resourcesRequired: true,
+      unitRequired: true,
+      demandRequesterRequired: true,
+      controlPlannedDates: true,
+      evaluationType: "numeric",
+      evaluationResult: "average"
+    },
     createdAt: "2025-03-10T14:00:00Z",
     status: "active",
   },
@@ -293,11 +350,25 @@ export const contracts: Contract[] = [
     id: "4",
     name: "Manutenção Offshore",
     billingType: "HH",
-    serviceLines: [
-      { id: "10", name: "Manutenção Preventiva", description: "Manutenção programada de equipamentos" },
-      { id: "11", name: "Manutenção Corretiva", description: "Reparos emergenciais" },
-      { id: "12", name: "Inspeção de Segurança", description: "Inspeções periódicas de segurança" },
+    serviceGroups: [
+      { id: "6", name: "Manutenção", color: "#059669", contractId: "4" },
+      { id: "7", name: "Inspeção", color: "#DC2626", contractId: "4" },
     ],
+    serviceLines: [
+      { id: "10", name: "Manutenção Preventiva", description: "Manutenção programada de equipamentos", code: "MP-001", value: 300.00, groupId: "6" },
+      { id: "11", name: "Manutenção Corretiva", description: "Reparos emergenciais", code: "MC-001", value: 350.00, groupId: "6" },
+      { id: "12", name: "Inspeção de Segurança", description: "Inspeções periódicas de segurança", code: "IS-001", value: 250.00, groupId: "7" },
+    ],
+    config: {
+      evidenceRequired: true,
+      documentsRequired: true,
+      resourcesRequired: true,
+      unitRequired: true,
+      demandRequesterRequired: false,
+      controlPlannedDates: true,
+      evaluationType: "numeric",
+      evaluationResult: "average"
+    },
     createdAt: "2025-01-20T08:00:00Z",
     status: "active",
   },

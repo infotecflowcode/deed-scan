@@ -206,7 +206,7 @@ alwaysApply: true
 ### 6.2 Grupos e Serviços
 
 - Hierarquia: Grupo de Trabalho > Linha de Serviço
-- Cada grupo pode ter múltiplas linhas
+- Cada grupo pode ter múltiplas Linha de Serviço
 - Cada linha deve ter um código e valor associado
 - Valores podem ser alterados (histórico mantido)
 

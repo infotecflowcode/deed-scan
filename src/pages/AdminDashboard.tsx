@@ -44,6 +44,7 @@ import { ServiceGroupForm } from '@/components/forms/ServiceGroupForm';
 import { ActivityTypeForm } from '@/components/forms/ActivityTypeForm';
 import { EvaluationCriteriaForm } from '@/components/forms/EvaluationCriteriaForm';
 import { UserForm } from '@/components/forms/UserForm';
+import { ContractManagement } from '@/components/ContractManagement';
 import { User, UserRole } from '@/types/auth';
 
 interface Activity {
@@ -558,7 +559,7 @@ const AdminDashboard: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <Card>
                   <CardContent className="p-4">
                     <div className="text-2xl font-bold">{contracts.length}</div>
@@ -567,14 +568,24 @@ const AdminDashboard: React.FC = () => {
                 </Card>
                 <Card>
                   <CardContent className="p-4">
-                    <div className="text-2xl font-bold">{users.length}</div>
-                    <p className="text-sm text-muted-foreground">Usuários Ativos</p>
+                    <div className="text-2xl font-bold">
+                      {contracts.reduce((total, contract) => total + contract.serviceGroups.length, 0)}
+                    </div>
+                    <p className="text-sm text-muted-foreground">Grupos de Trabalho</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-4">
-                    <div className="text-2xl font-bold">{groups.length}</div>
-                    <p className="text-sm text-muted-foreground">Grupos de Serviço</p>
+                    <div className="text-2xl font-bold">
+                      {contracts.reduce((total, contract) => total + contract.serviceLines.length, 0)}
+                    </div>
+                    <p className="text-sm text-muted-foreground">Linhas de Serviço</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-2xl font-bold">{users.length}</div>
+                    <p className="text-sm text-muted-foreground">Usuários Ativos</p>
                   </CardContent>
                 </Card>
                 <Card>
@@ -589,46 +600,7 @@ const AdminDashboard: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="contracts" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Contratos Disponíveis</CardTitle>
-              <CardDescription>
-                Selecione um contrato para visualizar detalhes e atividades
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {contracts.map((contract) => (
-                  <Card 
-                    key={contract.id} 
-                    className={`cursor-pointer transition-colors ${
-                      selectedContract?.id === contract.id 
-                        ? 'ring-2 ring-primary' 
-                        : 'hover:bg-muted/50'
-                    }`}
-                    onClick={() => setSelectedContract(contract)}
-                  >
-                    <CardHeader>
-                      <CardTitle className="text-lg">{contract.name}</CardTitle>
-                      <CardDescription>
-                        {contract.billingType} • {contract.serviceLines.length} linhas de serviço
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center justify-between">
-                        <Badge variant={contract.status === 'active' ? 'default' : 'secondary'}>
-                          {contract.status === 'active' ? 'Ativo' : 'Inativo'}
-                        </Badge>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <ContractManagement />
         </TabsContent>
 
         <TabsContent value="activities" className="space-y-4">
