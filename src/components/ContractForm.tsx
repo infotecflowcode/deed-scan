@@ -9,8 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Edit2, Save, X } from "lucide-react";
-import { Contract, ServiceGroup, ServiceLine, ContractConfig, DynamicField } from "@/data/mockData";
+import { Contract, ServiceGroup, ServiceLine, ContractConfig, DynamicField, EvaluationCriteria } from "@/data/mockData";
 import { ContractDynamicFields } from "./ContractDynamicFields";
+import { ContractEvaluationCriteria } from "./ContractEvaluationCriteria";
 
 interface ContractFormProps {
   contract?: Contract;
@@ -38,6 +39,7 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
   const [serviceGroups, setServiceGroups] = useState<ServiceGroup[]>([]);
   const [serviceLines, setServiceLines] = useState<ServiceLine[]>([]);
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
+  const [evaluationCriteria, setEvaluationCriteria] = useState<EvaluationCriteria[]>([]);
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [editingLine, setEditingLine] = useState<string | null>(null);
 
@@ -51,6 +53,7 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
       setServiceGroups(contract.serviceGroups || []);
       setServiceLines(contract.serviceLines || []);
       setDynamicFields(contract.dynamicFields || []);
+      setEvaluationCriteria(contract.evaluationCriteria || []);
     }
   }, [contract]);
 
@@ -63,6 +66,7 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
         serviceGroups,
         serviceLines,
         dynamicFields,
+        evaluationCriteria,
         config: formData.config,
         status: "active",
       });
@@ -152,10 +156,11 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
       </div>
 
       <Tabs defaultValue="groups" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="groups">Grupos de Trabalho</TabsTrigger>
           <TabsTrigger value="lines">Linhas de Serviço</TabsTrigger>
           <TabsTrigger value="fields">Campos Dinâmicos</TabsTrigger>
+          <TabsTrigger value="criteria">Critérios de Avaliação</TabsTrigger>
           <TabsTrigger value="config">Configurações</TabsTrigger>
         </TabsList>
 
@@ -389,6 +394,13 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
           <ContractDynamicFields
             fields={dynamicFields}
             onFieldsChange={setDynamicFields}
+          />
+        </TabsContent>
+
+        <TabsContent value="criteria" className="space-y-4">
+          <ContractEvaluationCriteria
+            criteria={evaluationCriteria}
+            onCriteriaChange={setEvaluationCriteria}
           />
         </TabsContent>
 

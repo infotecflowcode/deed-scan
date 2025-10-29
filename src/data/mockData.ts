@@ -67,6 +67,7 @@ export interface Contract {
   serviceLines: ServiceLine[];
   config: ContractConfig;
   dynamicFields: DynamicField[];
+  evaluationCriteria: EvaluationCriteria[];
   createdAt: string;
   status: "active" | "inactive";
 }
@@ -347,6 +348,29 @@ export const contracts: Contract[] = [
         ]
       }
     ],
+    evaluationCriteria: [
+      {
+        id: "criteria-1",
+        name: "Qualidade Técnica",
+        maxScore: 5,
+        required: true,
+        contractId: "1"
+      },
+      {
+        id: "criteria-2",
+        name: "Tempo de Entrega",
+        maxScore: 5,
+        required: true,
+        contractId: "1"
+      },
+      {
+        id: "criteria-3",
+        name: "Conformidade com Padrões",
+        maxScore: 5,
+        required: false,
+        contractId: "1"
+      }
+    ],
     createdAt: "2025-01-15T10:00:00Z",
     status: "active",
   },
@@ -372,6 +396,22 @@ export const contracts: Contract[] = [
       evaluationResult: "sum"
     },
     dynamicFields: [],
+    evaluationCriteria: [
+      {
+        id: "criteria-4",
+        name: "Atendimento ao Cliente",
+        maxScore: 5,
+        required: true,
+        contractId: "2"
+      },
+      {
+        id: "criteria-5",
+        name: "Disponibilidade",
+        maxScore: 5,
+        required: true,
+        contractId: "2"
+      }
+    ],
     createdAt: "2025-02-01T09:00:00Z",
     status: "active",
   },
@@ -414,6 +454,29 @@ export const contracts: Contract[] = [
           { id: "opt-7", label: "TypeScript", value: "typescript" },
           { id: "opt-8", label: "PostgreSQL", value: "postgresql" }
         ]
+      }
+    ],
+    evaluationCriteria: [
+      {
+        id: "criteria-6",
+        name: "Qualidade do Código",
+        maxScore: 5,
+        required: true,
+        contractId: "3"
+      },
+      {
+        id: "criteria-7",
+        name: "Funcionalidade",
+        maxScore: 5,
+        required: true,
+        contractId: "3"
+      },
+      {
+        id: "criteria-8",
+        name: "Performance",
+        maxScore: 5,
+        required: false,
+        contractId: "3"
       }
     ],
     createdAt: "2025-03-10T14:00:00Z",
@@ -470,6 +533,29 @@ export const contracts: Contract[] = [
         isActive: true,
         min: 1,
         max: 5
+      }
+    ],
+    evaluationCriteria: [
+      {
+        id: "criteria-9",
+        name: "Segurança Operacional",
+        maxScore: 5,
+        required: true,
+        contractId: "4"
+      },
+      {
+        id: "criteria-10",
+        name: "Conformidade Técnica",
+        maxScore: 5,
+        required: true,
+        contractId: "4"
+      },
+      {
+        id: "criteria-11",
+        name: "Documentação",
+        maxScore: 5,
+        required: false,
+        contractId: "4"
       }
     ],
     createdAt: "2025-01-20T08:00:00Z",

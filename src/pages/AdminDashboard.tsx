@@ -33,7 +33,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { contracts, ServiceGroup, ActivityType, EvaluationCriteria } from '@/data/mockData';
 import type { Contract } from '@/data/mockData';
 import { useToast } from '@/hooks/use-toast';
-import { UserSelector } from '@/components/UserSelector';
 import { CommentSystem } from '@/components/CommentSystem';
 import { DynamicFieldEditor } from '@/components/DynamicFieldEditor';
 import { useServiceGroups } from '@/hooks/useServiceGroups';
@@ -410,7 +409,6 @@ const AdminDashboard: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <UserSelector />
               <Dialog open={showCreateContract} onOpenChange={setShowCreateContract}>
                 <DialogTrigger asChild>
                   <Button>
@@ -539,12 +537,10 @@ const AdminDashboard: React.FC = () => {
 
       {/* Seleção de Contrato e Conteúdo */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full max-w-6xl grid-cols-7">
+        <TabsList className="grid w-full max-w-6xl grid-cols-5">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="contracts">Contratos</TabsTrigger>
           <TabsTrigger value="activities">Atividades</TabsTrigger>
-          <TabsTrigger value="groups">Grupos</TabsTrigger>
-          <TabsTrigger value="types">Tipos</TabsTrigger>
           <TabsTrigger value="criteria">Critérios</TabsTrigger>
           <TabsTrigger value="users">Usuários</TabsTrigger>
         </TabsList>
@@ -733,161 +729,6 @@ const AdminDashboard: React.FC = () => {
           )}
         </TabsContent>
 
-        {/* GRUPOS DE SERVIÇO */}
-        <TabsContent value="groups" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Grupos de Serviço</h2>
-            <Button onClick={() => {
-              setEditingGroup(null);
-              setIsGroupModalOpen(true);
-            }}>
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Grupo
-            </Button>
-          </div>
-          
-          <Dialog open={isGroupModalOpen} onOpenChange={setIsGroupModalOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingGroup ? "Editar Grupo de Serviço" : "Adicionar Grupo de Serviço"}
-                </DialogTitle>
-              </DialogHeader>
-              <ServiceGroupForm
-                group={editingGroup}
-                onSubmit={editingGroup ? handleUpdateGroup : handleAddGroup}
-                onCancel={() => {
-                  setEditingGroup(null);
-                  setIsGroupModalOpen(false);
-                }}
-                isLoading={isSubmitting}
-              />
-            </DialogContent>
-          </Dialog>
-          
-          {groupsLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              <span>Carregando grupos...</span>
-            </div>
-          ) : groups.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>Nenhum grupo de serviço configurado ainda.</p>
-              <p className="text-sm">Clique em "Novo Grupo" para começar.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {groups.map((group) => (
-                <div
-                  key={group.id}
-                  className="border rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: group.color }}
-                    />
-                    <span className="font-medium">{group.name}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => {
-                        setEditingGroup(group);
-                        setIsGroupModalOpen(true);
-                      }}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleDeleteGroup(group.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* TIPOS DE ATIVIDADE */}
-        <TabsContent value="types" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Tipos de Atividade</h2>
-            <Button onClick={() => {
-              setEditingType(null);
-              setIsTypeModalOpen(true);
-            }}>
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Tipo
-            </Button>
-          </div>
-          
-          <Dialog open={isTypeModalOpen} onOpenChange={setIsTypeModalOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingType ? "Editar Tipo de Atividade" : "Adicionar Tipo de Atividade"}
-                </DialogTitle>
-              </DialogHeader>
-              <ActivityTypeForm
-                type={editingType}
-                onSubmit={editingType ? handleUpdateType : handleAddType}
-                onCancel={() => {
-                  setEditingType(null);
-                  setIsTypeModalOpen(false);
-                }}
-                isLoading={isSubmitting}
-              />
-            </DialogContent>
-          </Dialog>
-          
-          {typesLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              <span>Carregando tipos...</span>
-            </div>
-          ) : types.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>Nenhum tipo de atividade configurado ainda.</p>
-              <p className="text-sm">Clique em "Novo Tipo" para começar.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {types.map((type) => (
-                <div
-                  key={type.id}
-                  className="border rounded-lg p-3 flex items-center justify-between hover:bg-muted/50 transition-colors"
-                >
-                  <span>{type.name}</span>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setEditingType(type);
-                        setIsTypeModalOpen(true);
-                      }}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteType(type.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
 
         {/* CRITÉRIOS DE AVALIAÇÃO */}
         <TabsContent value="criteria" className="space-y-4">
