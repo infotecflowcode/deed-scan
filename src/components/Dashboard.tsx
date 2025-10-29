@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Activity, serviceGroups } from "@/data/mockData";
+import { Activity } from "@/data/mockData";
 import { useUser } from "@/contexts/UserContext";
+import { useServiceGroups } from "@/hooks/useServiceGroups";
 import {
   BarChart,
   Bar,
@@ -26,8 +27,11 @@ import {
   Users,
   Shield,
   Wrench,
-  BarChart3
+  BarChart3,
+  Settings
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 interface DashboardProps {
   activities: Activity[];
@@ -35,6 +39,7 @@ interface DashboardProps {
 
 export const Dashboard = ({ activities }: DashboardProps) => {
   const { currentUser } = useUser();
+  const { groups: serviceGroups, isLoading: groupsLoading } = useServiceGroups();
 
   // Filtrar atividades por usuário se for colaborador
   const userActivities = currentUser.role === "colaborador"
@@ -51,7 +56,7 @@ export const Dashboard = ({ activities }: DashboardProps) => {
     { name: "Concluído", count: userActivities.filter(a => a.status === "approved").length, color: "bg-purple-100", textColor: "text-purple-600" },
   ];
 
-  // Work groups data
+  // Work groups data - usar grupos dinâmicos
   const workGroups = serviceGroups.map(group => ({
     name: group.name,
     count: userActivities.filter(a => a.groupId === group.id).length,
@@ -86,8 +91,16 @@ export const Dashboard = ({ activities }: DashboardProps) => {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold mb-2">{getDashboardTitle()}</h2>
+        {currentUser.role === "admin" && (
+          <Link to="/admin">
+            <Button variant="outline" size="sm">
+              <Settings className="h-4 w-4 mr-2" />
+              Painel Admin
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Status Cards Section */}
@@ -109,28 +122,44 @@ export const Dashboard = ({ activities }: DashboardProps) => {
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4 border-b pb-2">GRUPOS DE TRABALHO</h3>
           <div className="space-y-3">
-            {workGroups.map((group, index) => (
-              <div key={index} className="flex items-center justify-between py-2">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: group.color }}
-                  />
-                  <span className="text-sm">{group.name}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-orange-600 bg-orange-100 px-2 py-1 rounded">
-                    {group.count}
-                  </span>
-                  <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                    {group.count}
-                  </span>
-                  <span className="text-sm text-green-600 bg-green-100 px-2 py-1 rounded">
-                    {group.count}
-                  </span>
-                </div>
+            {groupsLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                <span className="ml-2 text-sm text-muted-foreground">Carregando grupos...</span>
               </div>
-            ))}
+            ) : workGroups.length === 0 ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">
+                  Nenhum grupo de trabalho cadastrado para este contrato.
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Acesse as configurações para cadastrar grupos.
+                </p>
+              </div>
+            ) : (
+              workGroups.map((group, index) => (
+                <div key={index} className="flex items-center justify-between py-2">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-4 h-4 rounded-full"
+                      style={{ backgroundColor: group.color }}
+                    />
+                    <span className="text-sm">{group.name}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-orange-600 bg-orange-100 px-2 py-1 rounded">
+                      {group.count}
+                    </span>
+                    <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                      {group.count}
+                    </span>
+                    <span className="text-sm text-green-600 bg-green-100 px-2 py-1 rounded">
+                      {group.count}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </Card>
 

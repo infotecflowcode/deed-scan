@@ -1,33 +1,23 @@
-import { createContext, useContext, useState, ReactNode } from "react";
-
-export type UserRole = "colaborador" | "lider" | "fiscal" | "admin";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-}
+import { createContext, useContext, ReactNode } from "react";
+import { useAuth } from "./AuthContext";
 
 interface UserContextType {
-  currentUser: User;
-  setCurrentUser: (user: User) => void;
+  currentUser: any; // Será substituído pelo user do AuthContext
+  setCurrentUser: (user: any) => void; // Mantido para compatibilidade
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-const mockUsers: User[] = [
-  { id: "1", name: "Swellen", email: "swellen@example.com", role: "colaborador" },
-  { id: "2", name: "João", email: "joao@example.com", role: "lider" },
-  { id: "3", name: "Leo", email: "leo@example.com", role: "fiscal" },
-  { id: "4", name: "Hemmely", email: "hemmely@example.com", role: "admin" },
-];
-
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [currentUser, setCurrentUser] = useState<User>(mockUsers[0]);
+  const { user } = useAuth();
+
+  // Manter compatibilidade com o código existente
+  const setCurrentUser = () => {
+    console.warn("setCurrentUser está deprecated. Use o AuthContext para gerenciar usuários.");
+  };
 
   return (
-    <UserContext.Provider value={{ currentUser, setCurrentUser }}>
+    <UserContext.Provider value={{ currentUser: user, setCurrentUser }}>
       {children}
     </UserContext.Provider>
   );
@@ -40,5 +30,3 @@ export const useUser = () => {
   }
   return context;
 };
-
-export { mockUsers };

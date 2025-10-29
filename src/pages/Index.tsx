@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,18 +22,17 @@ import { KanbanView } from "@/components/KanbanView";
 import { EvidenceReportExport } from "@/components/EvidenceReportExport";
 import { ActivityFilters, ActivityFiltersType } from "@/components/ActivityFilters";
 import { ActivityEditModal } from "@/components/ActivityEditModal";
-import { EditLog } from "@/data/mockData";
+import { EditLog, Activity } from "@/data/mockData";
 import { Dashboard } from "@/components/Dashboard";
-import { useUser } from "@/contexts/UserContext";
-import { Activity, activities as mockActivities } from "@/data/mockData";
+import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Settings, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const { toast } = useToast();
-  const { currentUser } = useUser();
+  const { user: currentUser } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [activities, setActivities] = useState<Activity[]>(mockActivities);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [approvalOpen, setApprovalOpen] = useState(false);
@@ -45,24 +44,74 @@ const Index = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
 
+  // Carregar atividades do localStorage
+  useEffect(() => {
+    const loadActivities = () => {
+      try {
+        const stored = localStorage.getItem("activities");
+        if (stored) {
+          const storedActivities: Activity[] = JSON.parse(stored);
+          setActivities(storedActivities);
+        } else {
+          // Carregar dados iniciais
+          const { activities: initialActivities } = require("@/data/mockData");
+          setActivities(initialActivities);
+          localStorage.setItem("activities", JSON.stringify(initialActivities));
+        }
+      } catch (error) {
+        console.error("Erro ao carregar atividades:", error);
+        setActivities([]);
+      }
+    };
+
+    loadActivities();
+  }, []);
+
+  // Salvar atividades no localStorage
+  const saveActivities = (newActivities: Activity[]) => {
+    try {
+      localStorage.setItem("activities", JSON.stringify(newActivities));
+      setActivities(newActivities);
+    } catch (error) {
+      console.error("Erro ao salvar atividades:", error);
+    }
+  };
+
+  // Adicionar nova atividade
+  const handleAddActivity = (activityData: Omit<Activity, "id">) => {
+    const newActivity: Activity = {
+      ...activityData,
+      id: `activity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    };
+    
+    const updatedActivities = [...activities, newActivity];
+    saveActivities(updatedActivities);
+    setIsDialogOpen(false);
+    
+    toast({
+      title: "Atividade registrada com sucesso!",
+      description: "A atividade foi adicionada à sua lista.",
+    });
+  };
+
   const handleApprove = (activityId: string, scores: any[], rejectionReason?: string) => {
-    setActivities(prev =>
-      prev.map(activity =>
-        activity.id === activityId
-          ? {
-              ...activity,
-              status: rejectionReason ? "rejected" : "approved",
-              approval: {
-                approverId: currentUser.id,
-                approverName: currentUser.name,
-                approvalDate: new Date().toISOString(),
-                criteriaScores: scores,
-                rejectionReason,
-              },
-            }
-          : activity
-      )
+    const updatedActivities = activities.map(activity =>
+      activity.id === activityId
+        ? {
+            ...activity,
+            status: rejectionReason ? "rejected" : "approved",
+            approval: {
+              approverId: currentUser?.id || "",
+              approverName: currentUser?.name || "",
+              approvalDate: new Date().toISOString(),
+              criteriaScores: scores,
+              rejectionReason,
+            },
+          }
+        : activity
     );
+    
+    saveActivities(updatedActivities);
     setApprovalOpen(false);
     toast({
       title: rejectionReason ? "Atividade reprovada" : "Atividade aprovada",
@@ -76,17 +125,16 @@ const Index = () => {
   };
 
   const handleSaveEdit = (updatedActivity: Activity, editLog: EditLog) => {
-    setActivities(prev =>
-      prev.map(activity =>
-        activity.id === updatedActivity.id ? updatedActivity : activity
-      )
+    const updatedActivities = activities.map(activity =>
+      activity.id === updatedActivity.id ? updatedActivity : activity
     );
+    saveActivities(updatedActivities);
   };
 
   const handleDuplicate = (activity: Activity) => {
     const duplicatedActivity: Activity = {
       ...activity,
-      id: String(activities.length + 1),
+      id: `activity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       title: `${activity.title} (Cópia)`,
       status: "pending",
       startDate: new Date().toISOString(),
@@ -98,7 +146,9 @@ const Index = () => {
       observations: "",
     };
 
-    setActivities(prev => [...prev, duplicatedActivity]);
+    const updatedActivities = [...activities, duplicatedActivity];
+    saveActivities(updatedActivities);
+    
     toast({
       title: "Atividade duplicada",
       description: "Uma nova atividade foi criada baseada no modelo selecionado.",
@@ -108,7 +158,7 @@ const Index = () => {
 
   const filteredActivities = activities.filter(activity => {
     // Filter by user role
-    if (currentUser.role === "colaborador") {
+    if (currentUser?.role === "colaborador") {
       if (activity.collaboratorId !== currentUser.id) return false;
     }
 
@@ -148,7 +198,7 @@ const Index = () => {
             </div>
             <div className="flex gap-2">
               <UserSelector />
-              {currentUser.role === "admin" && (
+              {currentUser?.role === "admin" && (
                 <Link to="/settings">
                   <Button variant="outline" size="icon">
                     <Settings className="w-4 h-4" />
@@ -169,7 +219,7 @@ const Index = () => {
                       Preencha os dados da atividade e adicione as evidências necessárias.
                     </DialogDescription>
                   </DialogHeader>
-                  <ActivityForm onSubmit={() => setIsDialogOpen(false)} />
+                  <ActivityForm onSubmit={handleAddActivity} />
                 </DialogContent>
               </Dialog>
             </div>
@@ -219,7 +269,7 @@ const Index = () => {
                 setSelectedActivity(activity);
                 setApprovalOpen(true);
               }}
-              canApprove={currentUser.role === "fiscal" || currentUser.role === "admin"}
+              canApprove={currentUser?.role === "fiscal" || currentUser?.role === "admin"}
             />
           </TabsContent>
 
@@ -242,7 +292,7 @@ const Index = () => {
                 setSelectedActivity(activity);
                 setApprovalOpen(true);
               }}
-              canApprove={currentUser.role === "fiscal" || currentUser.role === "admin"}
+              canApprove={currentUser?.role === "fiscal" || currentUser?.role === "admin"}
             />
           </TabsContent>
 
@@ -265,7 +315,7 @@ const Index = () => {
                 setSelectedActivity(activity);
                 setApprovalOpen(true);
               }}
-              canApprove={currentUser.role === "fiscal" || currentUser.role === "admin"}
+              canApprove={currentUser?.role === "fiscal" || currentUser?.role === "admin"}
             />
           </TabsContent>
 
@@ -290,7 +340,7 @@ const Index = () => {
                 setApprovalOpen(true);
               }}
               onDuplicate={handleDuplicate}
-              canApprove={currentUser.role === "fiscal" || currentUser.role === "admin"}
+              canApprove={currentUser?.role === "fiscal" || currentUser?.role === "admin"}
             />
           </TabsContent>
         </Tabs>

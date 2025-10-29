@@ -2,11 +2,13 @@ export interface ServiceGroup {
   id: string;
   name: string;
   color: string;
+  contractId?: string;
 }
 
 export interface ActivityType {
   id: string;
   name: string;
+  contractId?: string;
 }
 
 export interface EvaluationCriteria {
@@ -14,6 +16,7 @@ export interface EvaluationCriteria {
   name: string;
   maxScore: number;
   required: boolean;
+  contractId?: string;
 }
 
 export interface ServiceLine {
@@ -269,8 +272,7 @@ export const contracts: Contract[] = [
     billingType: "BPO",
     serviceLines: [
       { id: "4", name: "Help Desk", description: "Suporte técnico aos usuários" },
-      { id: "5", name: "Monitoramento", description: "Monitoramento 24/7 dos sistemas" },
-      { id: "6", name: "Backup e Recovery", description: "Gestão de backup e recuperação de dados" },
+      { id: "5", name: "Monitoramento", description: "Monitoramento 24/7 dos sistemas" }
     ],
     createdAt: "2025-02-01T09:00:00Z",
     status: "active",

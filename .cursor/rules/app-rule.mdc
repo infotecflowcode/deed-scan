@@ -1,0 +1,308 @@
+---
+alwaysApply: true
+---
+# CDA+ - Regras de Negócio
+
+## 1. GESTÃO DE USUÁRIOS E ACESSOS
+
+### 1.1 Perfis de Usuário
+
+- O sistema possui 4 perfis: **Colaborador**, **Líder**, **Fiscal** e **Administrador**
+- Cada usuário pode ter apenas um perfil ativo por vez
+- O perfil determina as permissões e visualizações disponíveis no sistema
+
+### 1.2 Permissões por Perfil
+
+**Colaborador:**
+- Registra apenas suas próprias atividades
+- Visualiza apenas seus registros
+- Não pode editar atividades aprovadas ou finalizadas
+- Não pode excluir atividades aprovadas ou finalizadas
+
+**Líder:**
+- Registra atividades para qualquer membro de sua equipe
+- Visualiza todas as atividades de sua equipe
+- Edita atividades não aprovadas de sua equipe
+- Exclui atividades não aprovadas de sua equipe
+- Não realiza aprovações (a menos que configurado)
+
+**Fiscal:**
+- Visualiza atividades dos grupos de serviço aos quais está associado
+- Aprova ou reprova atividades
+- Não registra atividades
+- Gera relatórios de sua área de fiscalização
+
+**Administrador:**
+- Acesso total ao sistema
+- Gerencia configurações do contrato
+- Gerencia usuários e perfis
+- Configura grupos de serviço, tipos, status e critérios de avaliação
+
+### 1.3 Associação a Grupos
+
+- Todo usuário deve estar associado a pelo menos um grupo de serviço
+- Um usuário pode estar em múltiplos grupos
+- A associação determina quais atividades o usuário pode registrar/visualizar
+- Colaboradores só visualizam atividades dos grupos aos quais pertencem
+
+---
+
+## 2. CADASTRO DE ATIVIDADES
+
+### 2.1 Campos Obrigatórios
+
+- Colaborador (preenchido automaticamente com usuário logado)
+- Jornada de trabalho
+- Unidade/Gerência (local de atuação)
+- Grupo de Trabalho
+- **Linha de Serviço** (crítico: define valor para medição)
+- Título da atividade
+- Tipo de atividade
+- Data e hora de início
+- Data e hora de fim
+- Status
+- Escopo da atividade
+
+### 2.2 Validações de Data/Hora
+
+- Data/hora de término deve ser posterior à data/hora de início
+- Duração é calculada automaticamente (fim - início)
+- Não é permitido sobrepor atividades do mesmo colaborador (opcional configurável)
+
+### 2.3 Linha de Serviço
+
+- **Toda atividade deve estar vinculada a uma linha de serviço**
+- Cada linha de serviço possui um valor monetário fixo
+- Linhas de serviço pertencem a um grupo de trabalho
+- O valor da linha é usado para cálculo da medição contratual
+
+### 2.4 Evidências
+
+- Upload de imagens pode ser obrigatório (configurável por contrato)
+- Upload de documentos é opcional (configurável por contrato)
+- Formatos aceitos: imagens (jpg, png, pdf), documentos (pdf, xlsx, docx)
+- Limite de tamanho por arquivo: a definir (sugestão: 10MB)
+
+### 2.5 Status de Atividades
+
+- Status padrão: Pendente, Em Andamento, Concluída, Aprovada, Reprovada, Cancelada
+- Status podem ser customizados por contrato
+- Transições de status:
+  - Pendente → Em Andamento → Concluída
+  - Concluída → Aprovada (após aprovação do fiscal)
+  - Concluída → Reprovada (se fiscal reprovar)
+  - Qualquer status → Cancelada (se aplicável)
+
+---
+
+## 3. APROVAÇÃO DE ATIVIDADES
+
+### 3.1 Critérios de Avaliação
+
+- Configuráveis por contrato (ex: Qualidade, Tempo de Entrega, Conformidade)
+- Cada critério possui:
+  - Nome
+  - Nota máxima (padrão 5, configurável até 10)
+  - Flag de obrigatoriedade
+  - Descrição (tooltip)
+
+### 3.2 Processo de Aprovação
+
+- Apenas atividades com status "Concluída" podem ser aprovadas
+- Fiscal deve avaliar todos os critérios obrigatórios
+- Sistema pode exibir avaliação numérica OU por estrelas (configurável)
+- Resultado final: média OU somatório das notas (configurável)
+- Fiscal pode adicionar comentários por critério (opcional)
+
+### 3.3 Reprovação
+
+- Se fiscal reprovar, deve informar motivo/justificativa (obrigatório)
+- Atividade reprovada volta ao status "Reprovada"
+- Atividade reprovada **não entra na medição contratual**
+- Colaborador e líder são notificados da reprovação
+
+### 3.4 Efeitos da Aprovação
+
+- Status muda para "Aprovada"
+- Ícone de aprovação muda de ⏱️ para ✅
+- Atividade não pode mais ser editada ou excluída
+- Atividade entra no cálculo da medição do mês
+- Data e hora da aprovação são registradas
+- Aprovador é registrado no histórico
+
+---
+
+## 4. MEDIÇÃO CONTRATUAL
+
+### 4.1 Cálculo de Medição
+
+- **Apenas atividades aprovadas entram na medição**
+- Valor da atividade = valor da linha de serviço associada
+- Medição do colaborador = soma dos valores de suas atividades aprovadas no período
+- Medição do contrato = soma de todos os colaboradores no período
+
+### 4.2 Boletim de Medição Mensal
+
+- Gerado automaticamente ao final do mês
+- Consolida:
+  - Valor total por colaborador
+  - Valor total por linha de serviço
+  - Valor total do contrato
+  - Quantidade de atividades por tipo/escopo
+- Inclui evidências e aprovações como anexos
+- Formato: PDF para cliente, Excel para gestão interna
+
+### 4.3 Comparativo Planejado x Executado
+
+- Requer cadastro prévio do planejamento mensal
+- Compara valor planejado vs valor executado
+- Identifica desvios por linha de serviço
+- Gera alertas para desvios acima de X% (configurável)
+
+---
+
+## 5. RELATÓRIOS E VISUALIZAÇÕES
+
+### 5.1 Tipos de Relatórios
+
+1. **Relatório Individual (PDF)**: atividade específica com todos os detalhes  
+2. **Lista de Atividades (Excel)**: planilha com filtros aplicados  
+3. **Relatório de Evidências (PDF)**: gerado em background, enviado por email  
+4. **Boletim de Medição (PDF/Excel)**: consolidado mensal para faturamento  
+
+### 5.2 Filtros Disponíveis
+
+- Período (data início/fim)
+- Colaborador (multi-select)
+- Tipo de atividade (multi-select)
+- Status (multi-select)
+- Grupo de serviço (multi-select)
+- Escopo (multi-select)
+- Pendente de aprovação (toggle)
+- Busca livre (título e observações)
+
+### 5.3 Visualizações da Timeline
+
+1. **Lista**: ordenação por data, paginação de 20 itens  
+2. **Calendário Mensal**: atividades distribuídas por dia  
+3. **Por Andamento**: colunas Não Iniciada, Em Execução, Concluída  
+4. **Por Vencimento**: colunas Vencidas, Vence Hoje, Vence em Breve, Outros  
+
+---
+
+## 6. CONFIGURAÇÕES DO CONTRATO
+
+### 6.1 Atributos Configuráveis
+
+- Evidências obrigatórias (sim/não)
+- Documentos obrigatórios (sim/não)
+- Recursos utilizados obrigatório (sim/não)
+- Unidade obrigatória (sim/não)
+- Exigir requisitante da demanda (sim/não)
+- Controlar datas previstas início/fim (sim/não)
+- Tipo de avaliação: numérico ou estrelas
+- Resultado de avaliação: média ou somatório
+
+### 6.2 Grupos e Serviços
+
+- Hierarquia: Grupo de Trabalho > Linha de Serviço
+- Cada grupo pode ter múltiplas linhas
+- Cada linha deve ter um código e valor associado
+- Valores podem ser alterados (histórico mantido)
+
+### 6.3 Campos Customizáveis
+
+- Tipos de campo: data/hora, número decimal, número inteiro, percentual, rating 1–5, sim/não, tabela customizada, texto, usuários
+- Campos podem ser obrigatórios ou opcionais
+- Tabelas customizadas requerem cadastro prévio de valores
+
+---
+
+## 7. NOTIFICAÇÕES E ALERTAS
+
+### 7.1 Gatilhos de Notificação
+
+- Atividade atrasada (vencimento passado e não concluída)
+- Atividade pendente de aprovação há mais de X dias
+- Atividade reprovada
+- Atividade aprovada
+- Medição mensal disponível
+
+### 7.2 Canais
+
+- Notificação in-app (dentro do sistema)
+- Email (configurável por usuário)
+- Push notification (se mobile)
+
+---
+
+## 8. EDIÇÃO E EXCLUSÃO
+
+### 8.1 Regras de Edição
+
+- Atividades podem ser editadas apenas se status ≠ "Aprovada" ou "Finalizada"
+- Líder pode editar atividades de sua equipe (com mesmas restrições)
+- Fiscal não pode editar atividades, apenas aprovar/reprovar
+- Histórico de edições é mantido (auditoria)
+
+### 8.2 Regras de Exclusão
+
+- Atividades podem ser excluídas apenas se status ≠ "Aprovada" ou "Finalizada"
+- Exclusão lógica (soft delete) para manter auditoria
+- Apenas criador ou líder podem excluir
+- Fiscal não pode excluir atividades
+
+---
+
+## 9. CLONAGEM DE ATIVIDADES
+
+- Facilita criação de atividades semelhantes
+- Clona todos os campos exceto: data/hora, status (volta para "Pendente")
+- Evidências não são clonadas
+- Nova atividade criada em rascunho
+
+---
+
+## 10. AUDITORIA E GOVERNANÇA
+
+### 10.1 Trilha de Auditoria
+
+- Todo registro mantém: criado por, criado em, modificado por, modificado em
+- Histórico de aprovações com: aprovador, data, critérios, notas
+- Log de alterações de valores de linhas de serviço
+- Log de acessos administrativos
+
+### 10.2 Integridade de Dados
+
+- Validações em tempo real nos formulários
+- Transações atômicas para medição (rollback em caso de erro)
+- Backup automático diário
+- Versionamento de configurações
+
+---
+
+## 11. INTEGRAÇÕES FUTURAS
+
+### 11.1 Sistemas Externos
+
+- **Power BI**: envio de dados para dashboards executivos
+- **RM Totvs**: sincronização de colaboradores e valores
+- **Ponto Eletrônico**: validação de jornada vs atividades registradas
+- **Planilha de Produtividade**: importação de metas e planejamento
+
+### 11.2 APIs
+
+- API REST para consulta de medições
+- API para cadastro automático de atividades (integrações)
+- Webhooks para notificações externas
+
+---
+
+## 12. ESCOPO FORA DO PROJETO
+
+**Não faz parte:**
+- Controle de ponto eletrônico
+- Funcionalidades não relacionadas a registro de atividades e medição
+- Integração com sistemas externos (inicialmente)
+- Treinamento extensivo além do básico
+- Customizações complexas fora dos requisitos essenciais
