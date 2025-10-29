@@ -119,7 +119,7 @@ export const ContractEvaluationCriteria = ({ criteria, onCriteriaChange }: Contr
             Configure os critérios específicos para avaliação das atividades deste contrato
           </p>
         </div>
-        <Button size="sm" onClick={startCreating}>
+        <Button type="button" size="sm" onClick={startCreating}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Critério
         </Button>
@@ -135,7 +135,7 @@ export const ContractEvaluationCriteria = ({ criteria, onCriteriaChange }: Contr
                 <p className="text-muted-foreground text-sm">
                   Nenhum critério configurado ainda.
                 </p>
-                <Button onClick={startCreating} size="sm" className="mt-2">
+                <Button type="button" onClick={startCreating} size="sm" className="mt-2">
                   Criar Primeiro Critério
                 </Button>
               </CardContent>
@@ -164,6 +164,7 @@ export const ContractEvaluationCriteria = ({ criteria, onCriteriaChange }: Contr
                       </div>
                       <div className="flex items-center gap-1">
                         <Button
+                          type="button"
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
@@ -172,6 +173,7 @@ export const ContractEvaluationCriteria = ({ criteria, onCriteriaChange }: Contr
                           <Edit className="h-3 w-3" />
                         </Button>
                         <Button
+                          type="button"
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
@@ -246,10 +248,10 @@ export const ContractEvaluationCriteria = ({ criteria, onCriteriaChange }: Contr
               </div>
 
               <div className="flex justify-end gap-2 pt-3">
-                <Button variant="outline" size="sm" onClick={resetForm}>
+                <Button type="button" variant="outline" size="sm" onClick={resetForm}>
                   Cancelar
                 </Button>
-                <Button size="sm" onClick={handleSave}>
+                <Button type="button" size="sm" onClick={handleSave}>
                   {editingCriterion ? "Atualizar" : "Criar"} Critério
                 </Button>
               </div>
