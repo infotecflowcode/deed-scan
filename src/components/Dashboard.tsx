@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Activity } from "@/data/mockData";
-import { useUser } from "@/contexts/UserContext";
-import { useServiceGroups } from "@/hooks/useServiceGroups";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   BarChart,
   Bar,
@@ -38,8 +37,7 @@ interface DashboardProps {
 }
 
 export const Dashboard = ({ activities }: DashboardProps) => {
-  const { currentUser } = useUser();
-  const { groups: serviceGroups, isLoading: groupsLoading } = useServiceGroups();
+  const { user: currentUser, currentContract } = useAuth();
 
   // Filtrar atividades por usuário se for colaborador
   const userActivities = currentUser.role === "colaborador"
@@ -56,12 +54,12 @@ export const Dashboard = ({ activities }: DashboardProps) => {
     { name: "Concluído", count: userActivities.filter(a => a.status === "approved").length, color: "bg-purple-100", textColor: "text-purple-600" },
   ];
 
-  // Work groups data - usar grupos dinâmicos
-  const workGroups = serviceGroups.map(group => ({
+  // Work groups data - usar grupos do contrato selecionado
+  const workGroups = currentContract?.serviceGroups?.map(group => ({
     name: group.name,
     count: userActivities.filter(a => a.groupId === group.id).length,
     color: group.color,
-  }));
+  })) || [];
 
   // Responsible users data - only show for admin/fiscal roles
   const responsibleUsers = currentUser.role === "colaborador" ? [] : Array.from(
@@ -122,12 +120,7 @@ export const Dashboard = ({ activities }: DashboardProps) => {
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4 border-b pb-2">GRUPOS DE TRABALHO</h3>
           <div className="space-y-3">
-            {groupsLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                <span className="ml-2 text-sm text-muted-foreground">Carregando grupos...</span>
-              </div>
-            ) : workGroups.length === 0 ? (
+            {workGroups.length === 0 ? (
               <div className="text-center py-4">
                 <p className="text-sm text-muted-foreground">
                   Nenhum grupo de trabalho cadastrado para este contrato.

@@ -268,10 +268,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const selectContract = (contractId: string) => {
+    // Buscar contrato no localStorage primeiro
+    const storedContracts = localStorage.getItem("contracts");
+    if (storedContracts) {
+      try {
+        const contractsList = JSON.parse(storedContracts);
+        const contract = contractsList.find((c: Contract) => c.id === contractId);
+        if (contract) {
+          setCurrentContract(contract);
+          localStorage.setItem("auth_contract", JSON.stringify(contract));
+          console.log("Contrato selecionado:", contract);
+          return;
+        }
+      } catch (error) {
+        console.error("Erro ao buscar contratos no localStorage:", error);
+      }
+    }
+    
+    // Fallback para mockData se não encontrar no localStorage
     const contract = contracts.find(c => c.id === contractId);
     if (contract) {
       setCurrentContract(contract);
       localStorage.setItem("auth_contract", JSON.stringify(contract));
+      console.log("Contrato selecionado (fallback):", contract);
+    } else {
+      console.error("Contrato não encontrado:", contractId);
     }
   };
 

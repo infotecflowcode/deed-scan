@@ -9,23 +9,36 @@ export const useDynamicFields = () => {
   const [fields, setFields] = useState<DynamicField[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Carregar campos do localStorage
+  // Carregar campos do localStorage e do contrato
   const loadFields = useCallback(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const allFields: DynamicField[] = JSON.parse(stored);
-        const contractFields = allFields.filter(
-          field => field.contractId === currentContract?.id
-        );
-        setFields(contractFields.sort((a, b) => a.order - b.order));
+      let contractFields: DynamicField[] = [];
+      
+      // 1. Buscar campos do contrato atual (se existir)
+      if (currentContract?.dynamicFields && currentContract.dynamicFields.length > 0) {
+        contractFields = [...currentContract.dynamicFields];
+        console.log("🔍 Campos carregados do contrato:", contractFields);
       }
+      
+      // 2. Buscar campos do localStorage (se não há campos no contrato)
+      if (contractFields.length === 0) {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const allFields: DynamicField[] = JSON.parse(stored);
+          contractFields = allFields.filter(
+            field => field.contractId === currentContract?.id
+          );
+          console.log("🔍 Campos carregados do localStorage:", contractFields);
+        }
+      }
+      
+      setFields(contractFields.sort((a, b) => a.order - b.order));
     } catch (error) {
       console.error("Erro ao carregar campos dinâmicos:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [currentContract?.id]);
+  }, [currentContract?.id, currentContract?.dynamicFields]);
 
   // Salvar campos no localStorage
   const saveFields = useCallback((newFields: DynamicField[]) => {

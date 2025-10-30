@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { EvaluationCriteria } from "@/data/mockData";
+import { EvaluationCriteria, evaluationCriteria as initialCriteria } from "@/data/mockData";
 import { useAuth } from "@/contexts/AuthContext";
 
 const STORAGE_KEY = "evaluation_criteria";
@@ -21,7 +21,6 @@ export const useEvaluationCriteria = () => {
         setCriteria(contractCriteria);
       } else {
         // Carregar dados iniciais do mockData
-        const { evaluationCriteria: initialCriteria } = require("@/data/mockData");
         const contractCriteria = initialCriteria.map((criterion: EvaluationCriteria) => ({
           ...criterion,
           contractId: currentContract?.id || "",

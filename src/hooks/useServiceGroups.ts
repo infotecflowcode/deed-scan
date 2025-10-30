@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ServiceGroup } from "@/data/mockData";
+import { ServiceGroup, serviceGroups as initialGroups } from "@/data/mockData";
 import { useAuth } from "@/contexts/AuthContext";
 
 const STORAGE_KEY = "service_groups";
@@ -21,7 +21,6 @@ export const useServiceGroups = () => {
         setGroups(contractGroups);
       } else {
         // Carregar dados iniciais do mockData
-        const { serviceGroups: initialGroups } = require("@/data/mockData");
         const contractGroups = initialGroups.map((group: ServiceGroup) => ({
           ...group,
           contractId: currentContract?.id || "",

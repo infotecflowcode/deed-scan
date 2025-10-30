@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ActivityType } from "@/data/mockData";
+import { ActivityType, activityTypes as initialTypes } from "@/data/mockData";
 import { useAuth } from "@/contexts/AuthContext";
 
 const STORAGE_KEY = "activity_types";
@@ -21,7 +21,6 @@ export const useActivityTypes = () => {
         setTypes(contractTypes);
       } else {
         // Carregar dados iniciais do mockData
-        const { activityTypes: initialTypes } = require("@/data/mockData");
         const contractTypes = initialTypes.map((type: ActivityType) => ({
           ...type,
           contractId: currentContract?.id || "",

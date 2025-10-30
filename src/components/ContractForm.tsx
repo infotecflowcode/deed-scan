@@ -9,9 +9,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Edit2, Save, X } from "lucide-react";
-import { Contract, ServiceGroup, ServiceLine, ContractConfig, DynamicField, EvaluationCriteria } from "@/data/mockData";
+import { Contract, ServiceGroup, ServiceLine, ContractConfig, DynamicField, EvaluationCriteria, ContractUser, ActivityType, Scope, Status, Unit, WorkShift } from "@/data/mockData";
 import { ContractDynamicFields } from "./ContractDynamicFields";
 import { ContractEvaluationCriteria } from "./ContractEvaluationCriteria";
+import { ContractPeople } from "./ContractPeople";
+import { useUsers } from "@/hooks/useUsers";
 
 interface ContractFormProps {
   contract?: Contract;
@@ -21,6 +23,8 @@ interface ContractFormProps {
 }
 
 export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }: ContractFormProps) => {
+  const { users } = useUsers();
+  
   const [formData, setFormData] = useState({
     name: "",
     billingType: "HH" as "HH" | "BPO" | "ENTREGAVEL",
@@ -40,8 +44,19 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
   const [serviceLines, setServiceLines] = useState<ServiceLine[]>([]);
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
   const [evaluationCriteria, setEvaluationCriteria] = useState<EvaluationCriteria[]>([]);
+  const [contractUsers, setContractUsers] = useState<ContractUser[]>([]);
+  const [activityTypes, setActivityTypes] = useState<ActivityType[]>([]);
+  const [scopes, setScopes] = useState<Scope[]>([]);
+  const [statuses, setStatuses] = useState<Status[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [workShifts, setWorkShifts] = useState<WorkShift[]>([]);
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [editingLine, setEditingLine] = useState<string | null>(null);
+  const [editingActivityType, setEditingActivityType] = useState<string | null>(null);
+  const [editingScope, setEditingScope] = useState<string | null>(null);
+  const [editingStatus, setEditingStatus] = useState<string | null>(null);
+  const [editingUnit, setEditingUnit] = useState<string | null>(null);
+  const [editingWorkShift, setEditingWorkShift] = useState<string | null>(null);
 
   useEffect(() => {
     if (contract) {
@@ -54,6 +69,12 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
       setServiceLines(contract.serviceLines || []);
       setDynamicFields(contract.dynamicFields || []);
       setEvaluationCriteria(contract.evaluationCriteria || []);
+      setContractUsers(contract.contractUsers || []);
+      setActivityTypes(contract.activityTypes || []);
+      setScopes(contract.scopes || []);
+      setStatuses(contract.statuses || []);
+      setUnits(contract.units || []);
+      setWorkShifts(contract.workShifts || []);
     }
   }, [contract]);
 
@@ -67,6 +88,12 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
         serviceLines,
         dynamicFields,
         evaluationCriteria,
+        contractUsers,
+        activityTypes,
+        scopes,
+        statuses,
+        units,
+        workShifts,
         config: formData.config,
         status: "active",
       });
@@ -121,6 +148,136 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
     return serviceLines.filter(line => line.groupId === groupId);
   };
 
+  // Funções para ActivityType
+  const addActivityType = () => {
+    const newType: ActivityType = {
+      id: `type-${Date.now()}`,
+      name: "",
+      description: "",
+      color: "#3B82F6",
+      contractId: "",
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setActivityTypes([...activityTypes, newType]);
+    setEditingActivityType(newType.id);
+  };
+
+  const updateActivityType = (id: string, updates: Partial<ActivityType>) => {
+    setActivityTypes(types =>
+      types.map(type => type.id === id ? { ...type, ...updates, updatedAt: new Date().toISOString() } : type)
+    );
+  };
+
+  const deleteActivityType = (id: string) => {
+    setActivityTypes(types => types.filter(type => type.id !== id));
+  };
+
+  // Funções para Scope
+  const addScope = () => {
+    const newScope: Scope = {
+      id: `scope-${Date.now()}`,
+      name: "",
+      description: "",
+      color: "#10B981",
+      contractId: "",
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setScopes([...scopes, newScope]);
+    setEditingScope(newScope.id);
+  };
+
+  const updateScope = (id: string, updates: Partial<Scope>) => {
+    setScopes(scopes =>
+      scopes.map(scope => scope.id === id ? { ...scope, ...updates, updatedAt: new Date().toISOString() } : scope)
+    );
+  };
+
+  const deleteScope = (id: string) => {
+    setScopes(scopes => scopes.filter(scope => scope.id !== id));
+  };
+
+  // Funções para Status
+  const addStatus = () => {
+    const newStatus: Status = {
+      id: `status-${Date.now()}`,
+      name: "",
+      description: "",
+      color: "#F59E0B",
+      contractId: "",
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setStatuses([...statuses, newStatus]);
+    setEditingStatus(newStatus.id);
+  };
+
+  const updateStatus = (id: string, updates: Partial<Status>) => {
+    setStatuses(statuses =>
+      statuses.map(status => status.id === id ? { ...status, ...updates, updatedAt: new Date().toISOString() } : status)
+    );
+  };
+
+  const deleteStatus = (id: string) => {
+    setStatuses(statuses => statuses.filter(status => status.id !== id));
+  };
+
+  // Funções para Unit
+  const addUnit = () => {
+    const newUnit: Unit = {
+      id: `unit-${Date.now()}`,
+      name: "",
+      code: "",
+      description: "",
+      contractId: "",
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setUnits([...units, newUnit]);
+    setEditingUnit(newUnit.id);
+  };
+
+  const updateUnit = (id: string, updates: Partial<Unit>) => {
+    setUnits(units =>
+      units.map(unit => unit.id === id ? { ...unit, ...updates, updatedAt: new Date().toISOString() } : unit)
+    );
+  };
+
+  const deleteUnit = (id: string) => {
+    setUnits(units => units.filter(unit => unit.id !== id));
+  };
+
+  // Funções para WorkShift
+  const addWorkShift = () => {
+    const newWorkShift: WorkShift = {
+      id: `shift-${Date.now()}`,
+      name: "",
+      description: "",
+      color: "#3B82F6",
+      contractId: "",
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setWorkShifts([...workShifts, newWorkShift]);
+    setEditingWorkShift(newWorkShift.id);
+  };
+
+  const updateWorkShift = (id: string, updates: Partial<WorkShift>) => {
+    setWorkShifts(workShifts =>
+      workShifts.map(workShift => workShift.id === id ? { ...workShift, ...updates, updatedAt: new Date().toISOString() } : workShift)
+    );
+  };
+
+  const deleteWorkShift = (id: string) => {
+    setWorkShifts(workShifts => workShifts.filter(workShift => workShift.id !== id));
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -155,256 +312,16 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
         </div>
       </div>
 
-      <Tabs defaultValue="groups" className="w-full">
+      <Tabs defaultValue="contract-attributes" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="groups">Grupos de Trabalho</TabsTrigger>
-          <TabsTrigger value="lines">Linhas de Serviço</TabsTrigger>
-          <TabsTrigger value="fields">Campos Dinâmicos</TabsTrigger>
-          <TabsTrigger value="criteria">Critérios de Avaliação</TabsTrigger>
-          <TabsTrigger value="config">Configurações</TabsTrigger>
+          <TabsTrigger value="contract-attributes">Atributos dos Contratos</TabsTrigger>
+          <TabsTrigger value="groups-services">Grupos e Serviços</TabsTrigger>
+          <TabsTrigger value="task-attributes">Atributos das Tarefas</TabsTrigger>
+          <TabsTrigger value="additional-info">Informações adicionais</TabsTrigger>
+          <TabsTrigger value="access-profiles">Perfil de Acesso</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="groups" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium">Grupos de Trabalho</h3>
-            <Button type="button" onClick={addServiceGroup} size="sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Adicionar Grupo
-            </Button>
-          </div>
-
-          <div className="space-y-3">
-            {serviceGroups.map((group) => (
-              <Card key={group.id}>
-                <CardContent className="p-4">
-                  {editingGroup === group.id ? (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div>
-                          <Label htmlFor={`group-name-${group.id}`}>Nome</Label>
-                          <Input
-                            id={`group-name-${group.id}`}
-                            value={group.name}
-                            onChange={(e) => updateServiceGroup(group.id, { name: e.target.value })}
-                            placeholder="Nome do grupo"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor={`group-color-${group.id}`}>Cor</Label>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              id={`group-color-${group.id}`}
-                              type="color"
-                              value={group.color}
-                              onChange={(e) => updateServiceGroup(group.id, { color: e.target.value })}
-                              className="w-16 h-10"
-                            />
-                            <Input
-                              value={group.color}
-                              onChange={(e) => updateServiceGroup(group.id, { color: e.target.value })}
-                              placeholder="#3B82F6"
-                              className="flex-1"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex items-end gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => setEditingGroup(null)}
-                          >
-                            <Save className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => deleteServiceGroup(group.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-4 h-4 rounded"
-                          style={{ backgroundColor: group.color }}
-                        />
-                        <span className="font-medium">{group.name}</span>
-                        <Badge variant="secondary">
-                          {getServiceLinesForGroup(group.id).length} linhas
-                        </Badge>
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setEditingGroup(group.id)}
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="lines" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium">Linhas de Serviço</h3>
-            <div className="text-sm text-muted-foreground">
-              Total: {serviceLines.length} linhas
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {serviceGroups.map((group) => (
-              <Card key={group.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded"
-                        style={{ backgroundColor: group.color }}
-                      />
-                      <CardTitle className="text-base">{group.name}</CardTitle>
-                    </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => addServiceLine(group.id)}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Adicionar Linha
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-3">
-                    {getServiceLinesForGroup(group.id).map((line) => (
-                      <div key={line.id} className="border rounded-lg p-3">
-                        {editingLine === line.id ? (
-                          <div className="space-y-3">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <div>
-                                <Label htmlFor={`line-name-${line.id}`}>Nome</Label>
-                                <Input
-                                  id={`line-name-${line.id}`}
-                                  value={line.name}
-                                  onChange={(e) => updateServiceLine(line.id, { name: e.target.value })}
-                                  placeholder="Nome da linha de serviço"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor={`line-code-${line.id}`}>Código</Label>
-                                <Input
-                                  id={`line-code-${line.id}`}
-                                  value={line.code}
-                                  onChange={(e) => updateServiceLine(line.id, { code: e.target.value })}
-                                  placeholder="Ex: DEV-001"
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <Label htmlFor={`line-description-${line.id}`}>Descrição</Label>
-                              <Textarea
-                                id={`line-description-${line.id}`}
-                                value={line.description}
-                                onChange={(e) => updateServiceLine(line.id, { description: e.target.value })}
-                                placeholder="Descrição da linha de serviço"
-                                rows={2}
-                              />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <div>
-                                <Label htmlFor={`line-value-${line.id}`}>Valor (R$)</Label>
-                                <Input
-                                  id={`line-value-${line.id}`}
-                                  type="number"
-                                  step="0.01"
-                                  min="0"
-                                  value={line.value}
-                                  onChange={(e) => updateServiceLine(line.id, { value: parseFloat(e.target.value) || 0 })}
-                                  placeholder="0.00"
-                                />
-                              </div>
-                              <div className="flex items-end gap-2">
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  onClick={() => setEditingLine(null)}
-                                  className="flex-1"
-                                >
-                                  <Save className="w-4 h-4 mr-2" />
-                                  Salvar
-                                </Button>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => deleteServiceLine(line.id)}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium">{line.name}</span>
-                                <Badge variant="outline">{line.code}</Badge>
-                                <Badge variant="secondary">
-                                  R$ {line.value.toFixed(2)}
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-muted-foreground">{line.description}</p>
-                            </div>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setEditingLine(line.id)}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    {getServiceLinesForGroup(group.id).length === 0 && (
-                      <div className="text-center py-4 text-muted-foreground">
-                        Nenhuma linha de serviço cadastrada
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="fields" className="space-y-4">
-          <ContractDynamicFields
-            fields={dynamicFields}
-            onFieldsChange={setDynamicFields}
-          />
-        </TabsContent>
-
-        <TabsContent value="criteria" className="space-y-4">
-          <ContractEvaluationCriteria
-            criteria={evaluationCriteria}
-            onCriteriaChange={setEvaluationCriteria}
-          />
-        </TabsContent>
-
-        <TabsContent value="config" className="space-y-4">
+        <TabsContent value="contract-attributes" className="space-y-4">
           <h3 className="text-lg font-medium">Configurações do Contrato</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -554,6 +471,635 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="groups-services" className="space-y-4">
+          <div className="space-y-6">
+            {/* Grupos de Trabalho */}
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium">Grupos de Trabalho</h3>
+                <Button type="button" onClick={addServiceGroup} size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Grupo
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {serviceGroups.map((group) => (
+                  <Card key={group.id}>
+                    <CardContent className="p-4">
+                      {editingGroup === group.id ? (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div>
+                              <Label htmlFor={`group-name-${group.id}`}>Nome</Label>
+                              <Input
+                                id={`group-name-${group.id}`}
+                                value={group.name}
+                                onChange={(e) => updateServiceGroup(group.id, { name: e.target.value })}
+                                placeholder="Nome do grupo"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`group-color-${group.id}`}>Cor</Label>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  id={`group-color-${group.id}`}
+                                  type="color"
+                                  value={group.color}
+                                  onChange={(e) => updateServiceGroup(group.id, { color: e.target.value })}
+                                  className="w-16 h-10"
+                                />
+                                <Input
+                                  value={group.color}
+                                  onChange={(e) => updateServiceGroup(group.id, { color: e.target.value })}
+                                  placeholder="#3B82F6"
+                                  className="flex-1"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-end gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => setEditingGroup(null)}
+                              >
+                                <Save className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => deleteServiceGroup(group.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-4 h-4 rounded"
+                              style={{ backgroundColor: group.color }}
+                            />
+                            <span className="font-medium">{group.name}</span>
+                            <Badge variant="secondary">
+                              {getServiceLinesForGroup(group.id).length} linhas
+                            </Badge>
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setEditingGroup(group.id)}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* Linhas de Serviço */}
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium">Linhas de Serviço</h3>
+                <div className="text-sm text-muted-foreground">
+                  Total: {serviceLines.length} linhas
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {serviceGroups.map((group) => (
+                  <Card key={group.id}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded"
+                            style={{ backgroundColor: group.color }}
+                          />
+                          <CardTitle className="text-base">{group.name}</CardTitle>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => addServiceLine(group.id)}
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Adicionar Linha
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="space-y-3">
+                        {getServiceLinesForGroup(group.id).map((line) => (
+                          <div key={line.id} className="border rounded-lg p-3">
+                            {editingLine === line.id ? (
+                              <div className="space-y-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <div>
+                                    <Label htmlFor={`line-name-${line.id}`}>Nome</Label>
+                                    <Input
+                                      id={`line-name-${line.id}`}
+                                      value={line.name}
+                                      onChange={(e) => updateServiceLine(line.id, { name: e.target.value })}
+                                      placeholder="Nome da linha de serviço"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor={`line-code-${line.id}`}>Código</Label>
+                                    <Input
+                                      id={`line-code-${line.id}`}
+                                      value={line.code}
+                                      onChange={(e) => updateServiceLine(line.id, { code: e.target.value })}
+                                      placeholder="Ex: DEV-001"
+                                    />
+                                  </div>
+                                </div>
+                                <div>
+                                  <Label htmlFor={`line-description-${line.id}`}>Descrição</Label>
+                                  <Textarea
+                                    id={`line-description-${line.id}`}
+                                    value={line.description}
+                                    onChange={(e) => updateServiceLine(line.id, { description: e.target.value })}
+                                    placeholder="Descrição da linha de serviço"
+                                    rows={2}
+                                  />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <div>
+                                    <Label htmlFor={`line-value-${line.id}`}>Valor (R$)</Label>
+                                    <Input
+                                      id={`line-value-${line.id}`}
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      value={line.value}
+                                      onChange={(e) => updateServiceLine(line.id, { value: parseFloat(e.target.value) || 0 })}
+                                      placeholder="0.00"
+                                    />
+                                  </div>
+                                  <div className="flex items-end gap-2">
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      onClick={() => setEditingLine(null)}
+                                      className="flex-1"
+                                    >
+                                      <Save className="w-4 h-4 mr-2" />
+                                      Salvar
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => deleteServiceLine(line.id)}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="font-medium">{line.name}</span>
+                                    <Badge variant="outline">{line.code}</Badge>
+                                    <Badge variant="secondary">
+                                      R$ {line.value.toFixed(2)}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">{line.description}</p>
+                                </div>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setEditingLine(line.id)}
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {getServiceLinesForGroup(group.id).length === 0 && (
+                          <div className="text-center py-4 text-muted-foreground">
+                            Nenhuma linha de serviço cadastrada
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="task-attributes" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Tipo de Atividade */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Tipo</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {activityTypes.map((type) => (
+                    <div key={type.id} className="flex items-center justify-between p-2 hover:bg-muted/50 rounded">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: type.color }}
+                        />
+                        <span className="text-sm">{type.name}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditingActivityType(type.id)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => deleteActivityType(type.id)}
+                          className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 pt-2 border-t">
+                  <Input
+                    placeholder="Novo Tipo ..."
+                    value={editingActivityType ? activityTypes.find(t => t.id === editingActivityType)?.name || "" : ""}
+                    onChange={(e) => {
+                      if (editingActivityType) {
+                        updateActivityType(editingActivityType, { name: e.target.value });
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && editingActivityType) {
+                        setEditingActivityType(null);
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      if (editingActivityType) {
+                        setEditingActivityType(null);
+                      } else {
+                        addActivityType();
+                      }
+                    }}
+                  >
+                    <Save className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Status */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Status</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {statuses.map((status) => (
+                    <div key={status.id} className="flex items-center justify-between p-2 hover:bg-muted/50 rounded">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: status.color }}
+                        />
+                        <span className="text-sm">{status.name}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditingStatus(status.id)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => deleteStatus(status.id)}
+                          className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 pt-2 border-t">
+                  <Input
+                    placeholder="Descrição ..."
+                    value={editingStatus ? statuses.find(s => s.id === editingStatus)?.name || "" : ""}
+                    onChange={(e) => {
+                      if (editingStatus) {
+                        updateStatus(editingStatus, { name: e.target.value });
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && editingStatus) {
+                        setEditingStatus(null);
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      if (editingStatus) {
+                        setEditingStatus(null);
+                      } else {
+                        addStatus();
+                      }
+                    }}
+                  >
+                    <Save className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Escopo */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Escopo</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {scopes.map((scope) => (
+                    <div key={scope.id} className="flex items-center justify-between p-2 hover:bg-muted/50 rounded">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: scope.color }}
+                        />
+                        <span className="text-sm">{scope.name}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditingScope(scope.id)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => deleteScope(scope.id)}
+                          className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 pt-2 border-t">
+                  <Input
+                    placeholder="Novo Escopo..."
+                    value={editingScope ? scopes.find(s => s.id === editingScope)?.name || "" : ""}
+                    onChange={(e) => {
+                      if (editingScope) {
+                        updateScope(editingScope, { name: e.target.value });
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && editingScope) {
+                        setEditingScope(null);
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      if (editingScope) {
+                        setEditingScope(null);
+                      } else {
+                        addScope();
+                      }
+                    }}
+                  >
+                    <Save className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Unidade */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Unidade</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {units.map((unit) => (
+                    <div key={unit.id} className="flex items-center justify-between p-2 hover:bg-muted/50 rounded">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{unit.name}</span>
+                        {unit.code && (
+                          <Badge variant="outline" className="text-xs">
+                            {unit.code}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditingUnit(unit.id)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => deleteUnit(unit.id)}
+                          className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 pt-2 border-t">
+                  <Input
+                    placeholder="Nova Unidade de Negócios..."
+                    value={editingUnit ? units.find(u => u.id === editingUnit)?.name || "" : ""}
+                    onChange={(e) => {
+                      if (editingUnit) {
+                        updateUnit(editingUnit, { name: e.target.value });
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && editingUnit) {
+                        setEditingUnit(null);
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      if (editingUnit) {
+                        setEditingUnit(null);
+                      } else {
+                        addUnit();
+                      }
+                    }}
+                  >
+                    <Save className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Jornada de Trabalho */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Jornada</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {workShifts.map((workShift) => (
+                    <div key={workShift.id} className="flex items-center justify-between p-2 hover:bg-muted/50 rounded">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: workShift.color }}
+                        />
+                        <span className="text-sm">{workShift.name}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditingWorkShift(workShift.id)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => deleteWorkShift(workShift.id)}
+                          className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 pt-2 border-t">
+                  <Input
+                    placeholder="Nova Jornada..."
+                    value={editingWorkShift ? workShifts.find(ws => ws.id === editingWorkShift)?.name || "" : ""}
+                    onChange={(e) => {
+                      if (editingWorkShift) {
+                        updateWorkShift(editingWorkShift, { name: e.target.value });
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && editingWorkShift) {
+                        setEditingWorkShift(null);
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      if (editingWorkShift) {
+                        setEditingWorkShift(null);
+                      } else {
+                        addWorkShift();
+                      }
+                    }}
+                  >
+                    <Save className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Critérios de Avaliação - Seção separada */}
+          <div className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Critérios de Avaliação</CardTitle>
+                <CardDescription>
+                  Define os critérios usados pelos fiscais na etapa de aprovação das atividades
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ContractEvaluationCriteria
+                  criteria={evaluationCriteria}
+                  onCriteriaChange={setEvaluationCriteria}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="additional-info" className="space-y-4">
+          <h3 className="text-lg font-medium">Campos Dinâmicos</h3>
+          <ContractDynamicFields
+            fields={dynamicFields}
+            onFieldsChange={setDynamicFields}
+          />
+        </TabsContent>
+
+        <TabsContent value="access-profiles" className="space-y-4">
+          <h3 className="text-lg font-medium">Pessoas</h3>
+          <ContractPeople
+            contractUsers={contractUsers}
+            onUsersChange={setContractUsers}
+            availableUsers={users}
+            serviceGroups={serviceGroups}
+            serviceLines={serviceLines}
+          />
         </TabsContent>
       </Tabs>
 

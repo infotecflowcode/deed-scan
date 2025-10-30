@@ -1,15 +1,21 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ContractModal } from "./ContractModal";
-import { Contract, contracts } from "@/data/mockData";
-import { Plus, Edit2, Eye, Users, DollarSign, Settings } from "lucide-react";
+import { Contract } from "@/data/mockData";
+import { useContracts } from "@/hooks/useContracts";
+import { useAuth } from "@/contexts/AuthContext";
+import { Plus, Edit2, Eye, Users, DollarSign, Settings, ArrowRight } from "lucide-react";
 
 export const ContractManagement = () => {
+  const navigate = useNavigate();
+  const { selectContract } = useAuth();
+  const { contracts, createContract, updateContract, isLoading: contractsLoading } = useContracts();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | undefined>();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleCreateContract = () => {
     setEditingContract(undefined);
@@ -21,27 +27,40 @@ export const ContractManagement = () => {
     setIsModalOpen(true);
   };
 
+  const handleAccessContract = (contractId: string) => {
+    // Selecionar o contrato no contexto
+    selectContract(contractId);
+    
+    // Redirecionar para a página principal
+    navigate("/");
+  };
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingContract(undefined);
   };
 
   const handleSubmitContract = async (data: Omit<Contract, "id" | "createdAt">) => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
-      // Simular chamada à API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simular delay de API
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      console.log("Dados do contrato:", data);
-      
-      // Aqui você faria a chamada real para a API
-      // await createContract(data);
+      if (editingContract) {
+        // Atualizar contrato existente
+        updateContract(editingContract.id, data);
+        console.log("Contrato atualizado:", { id: editingContract.id, ...data });
+      } else {
+        // Criar novo contrato
+        const newContract = createContract(data);
+        console.log("Contrato criado:", newContract);
+      }
       
       handleCloseModal();
     } catch (error) {
       console.error("Erro ao salvar contrato:", error);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -62,6 +81,19 @@ export const ContractManagement = () => {
       default: return "bg-gray-100 text-gray-800";
     }
   };
+
+  if (contractsLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-center items-center py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Carregando contratos...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -113,6 +145,27 @@ export const ContractManagement = () => {
                 </div>
               </div>
 
+              {contract.contractUsers && contract.contractUsers.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Pessoas Atribuídas:</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {contract.contractUsers.slice(0, 3).map((contractUser) => (
+                      <Badge key={contractUser.id} variant="secondary" className="text-xs">
+                        {contractUser.role === "colaborador" && "👤"}
+                        {contractUser.role === "lider" && "👨‍💼"}
+                        {contractUser.role === "fiscal" && "👩‍💼"}
+                        {contractUser.role}
+                      </Badge>
+                    ))}
+                    {contract.contractUsers.length > 3 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{contract.contractUsers.length - 3} mais
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <h4 className="font-medium text-sm">Grupos de Trabalho:</h4>
                 <div className="flex flex-wrap gap-1">
@@ -152,12 +205,20 @@ export const ContractManagement = () => {
               </div>
 
               <div className="pt-2 border-t">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
                   <span>Criado em {new Date(contract.createdAt).toLocaleDateString('pt-BR')}</span>
                   <Badge variant={contract.status === "active" ? "default" : "secondary"}>
                     {contract.status === "active" ? "Ativo" : "Inativo"}
                   </Badge>
                 </div>
+                <Button 
+                  onClick={() => handleAccessContract(contract.id)}
+                  className="w-full"
+                  size="sm"
+                >
+                  <ArrowRight className="w-4 h-4 mr-2" />
+                  Acessar Contrato
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -169,7 +230,7 @@ export const ContractManagement = () => {
         onClose={handleCloseModal}
         contract={editingContract}
         onSubmit={handleSubmitContract}
-        isLoading={isLoading}
+        isLoading={isSubmitting}
       />
     </div>
   );

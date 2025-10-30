@@ -13,7 +13,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const { login, resetPassword, error, availableContracts, selectContract } = useAuth();
+  const { login, resetPassword, error, availableContracts, selectContract, user } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -25,15 +25,22 @@ export default function Login() {
     
     if (result.success) {
       setMessage("Login realizado com sucesso!");
-      // Verificar se o usuário tem acesso a múltiplos contratos
-      if (availableContracts.length > 1) {
-        navigate("/contract-selection");
-      } else if (availableContracts.length === 1) {
-        // Selecionar automaticamente o único contrato disponível
-        selectContract(availableContracts[0].id);
-        navigate("/");
+      
+      // Se for administrador, redirecionar diretamente para /admin
+      if (user?.role === "admin") {
+        console.log("🔑 Admin logado, redirecionando para /admin");
+        navigate("/admin");
       } else {
-        navigate("/");
+        // Para outros usuários, verificar contratos disponíveis
+        if (availableContracts.length > 1) {
+          navigate("/contract-selection");
+        } else if (availableContracts.length === 1) {
+          // Selecionar automaticamente o único contrato disponível
+          selectContract(availableContracts[0].id);
+          navigate("/");
+        } else {
+          navigate("/");
+        }
       }
     } else {
       setMessage(result.error || "Erro no login");

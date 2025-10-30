@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { UserProvider } from "@/contexts/UserContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { RoleBasedRedirect } from "@/components/RoleBasedRedirect";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
@@ -33,7 +34,9 @@ const App = () => (
                 path="/" 
                 element={
                   <ProtectedRoute>
-                    <Index />
+                    <RoleBasedRedirect>
+                      <Index />
+                    </RoleBasedRedirect>
                   </ProtectedRoute>
                 } 
               />
@@ -48,7 +51,7 @@ const App = () => (
               <Route 
                 path="/admin" 
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredRole="admin" requireContract={false}>
                     <AdminDashboard />
                   </ProtectedRoute>
                 } 

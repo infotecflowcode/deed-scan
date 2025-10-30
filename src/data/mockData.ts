@@ -8,7 +8,12 @@ export interface ServiceGroup {
 export interface ActivityType {
   id: string;
   name: string;
-  contractId?: string;
+  description?: string;
+  color: string;
+  contractId: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface EvaluationCriteria {
@@ -16,7 +21,7 @@ export interface EvaluationCriteria {
   name: string;
   maxScore: number;
   required: boolean;
-  contractId?: string;
+  contractId: string;
 }
 
 export interface ServiceLine {
@@ -46,6 +51,7 @@ export interface DynamicField {
   };
   order: number;
   isActive: boolean;
+  contractId?: string;
 }
 
 export interface ContractConfig {
@@ -59,6 +65,89 @@ export interface ContractConfig {
   evaluationResult: "average" | "sum";
 }
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: "collaborator" | "leader" | "fiscal" | "admin";
+  avatar?: string;
+  isActive: boolean;
+  contractId?: string;
+}
+
+export interface ContractUser {
+  id: string;
+  userId: string;
+  contractId: string;
+  role: "colaborador" | "lider" | "fiscal" | "admin";
+  serviceGroups: string[]; // IDs dos grupos de trabalho
+  serviceLines: string[]; // IDs das linhas de serviço
+  isActive: boolean;
+  assignedAt: string;
+  assignedBy: string;
+}
+
+export interface ActivityType {
+  id: string;
+  name: string;
+  description?: string;
+  color: string;
+  contractId: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Scope {
+  id: string;
+  name: string;
+  description?: string;
+  color: string;
+  contractId: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Status {
+  id: string;
+  name: string;
+  description?: string;
+  color: string;
+  contractId: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Unit {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  contractId: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkShift {
+  id: string;
+  name: string;
+  description?: string;
+  color: string;
+  contractId: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserServiceAssignment {
+  userId: string;
+  serviceGroupId: string;
+  serviceLineIds: string[];
+}
+
 export interface Contract {
   id: string;
   name: string;
@@ -68,6 +157,12 @@ export interface Contract {
   config: ContractConfig;
   dynamicFields: DynamicField[];
   evaluationCriteria: EvaluationCriteria[];
+  contractUsers: ContractUser[];
+  activityTypes: ActivityType[];
+  scopes: Scope[];
+  statuses: Status[];
+  units: Unit[];
+  workShifts: WorkShift[];
   createdAt: string;
   status: "active" | "inactive";
 }
@@ -119,27 +214,65 @@ export const serviceGroups: ServiceGroup[] = [
 ];
 
 export const activityTypes: ActivityType[] = [
-  { id: "1", name: "Manutenção de BOP" },
-  { id: "2", name: "Inspeção de Risers" },
-  { id: "3", name: "Limpeza de Tanques" },
-  { id: "4", name: "Calibração de Instrumentos" },
-  { id: "5", name: "Ronda de Segurança" },
-  { id: "6", name: "Teste de Pressão" },
-  { id: "7", name: "Manutenção de Compressores" },
-  { id: "8", name: "Inspeção de Soldas" },
-  { id: "9", name: "Operação de Guindaste" },
-  { id: "10", name: "Análise de Fluidos" },
-  { id: "11", name: "Troca de Filtros" },
-  { id: "12", name: "Soldagem Subaquática" },
+  { 
+    id: "1", 
+    name: "Manutenção de BOP",
+    description: "Manutenção preventiva e corretiva do Blowout Preventer",
+    color: "#3B82F6",
+    contractId: "",
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  { 
+    id: "2", 
+    name: "Inspeção de Risers",
+    description: "Inspeção visual e por ultrassom dos risers",
+    color: "#10B981",
+    contractId: "",
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  { 
+    id: "3", 
+    name: "Limpeza de Tanques",
+    description: "Limpeza e descontaminação de tanques de armazenamento",
+    color: "#F59E0B",
+    contractId: "",
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  { 
+    id: "4", 
+    name: "Calibração de Instrumentos",
+    description: "Calibração de instrumentos de medição e controle",
+    color: "#EF4444",
+    contractId: "",
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  { 
+    id: "5", 
+    name: "Ronda de Segurança",
+    description: "Ronda de inspeção de segurança e verificação de equipamentos",
+    color: "#8B5CF6",
+    contractId: "",
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
 ];
 
 export const evaluationCriteria: EvaluationCriteria[] = [
-  { id: "1", name: "Conformidade com Normas", maxScore: 5, required: true },
-  { id: "2", name: "Uso de EPIs", maxScore: 5, required: true },
-  { id: "3", name: "Procedimentos de Segurança", maxScore: 5, required: true },
-  { id: "4", name: "Qualidade Técnica", maxScore: 5, required: true },
-  { id: "5", name: "Documentação SMS", maxScore: 5, required: false },
-  { id: "6", name: "Limpeza da Área", maxScore: 5, required: false },
+  { id: "1", name: "Conformidade com Normas", maxScore: 5, required: true, contractId: "" },
+  { id: "2", name: "Uso de EPIs", maxScore: 5, required: true, contractId: "" },
+  { id: "3", name: "Procedimentos de Segurança", maxScore: 5, required: true, contractId: "" },
+  { id: "4", name: "Qualidade Técnica", maxScore: 5, required: true, contractId: "" },
+  { id: "5", name: "Documentação SMS", maxScore: 5, required: false, contractId: "" },
+  { id: "6", name: "Limpeza da Área", maxScore: 5, required: false, contractId: "" },
 ];
 
 // Comments
@@ -160,134 +293,48 @@ export interface CommentThread {
 
 export const activities: Activity[] = [
   {
-    id: "1",
-    title: "Manutenção preventiva do BOP Stack Principal",
+    id: "activity_1",
+    title: "Desenvolvimento de API REST",
     collaboratorId: "1",
-    collaboratorName: "Carlos Pereira",
-    groupId: "1",
-    typeId: "1",
-    startDate: "2025-10-20T06:00",
-    endDate: "2025-10-20T14:00",
-    status: "approved",
-    observations: "Inspeção completa do sistema BOP, troca de selos hidráulicos e teste de pressão conforme procedimento P-001",
-    photos: ["https://images.unsplash.com/photo-1578662996442-48f60103fc96", "https://images.unsplash.com/photo-1581092160562-40aa08e78837"],
-    documents: [{ name: "BOP_Inspection_Report.pdf", url: "#" }, { name: "Pressure_Test_Results.pdf", url: "#" }],
-    contractId: "4",
-    serviceLineId: "10",
-    approval: {
-      approverId: "3",
-      approverName: "Ana Rodrigues",
-      approvalDate: "2025-10-20T16:00",
-      criteriaScores: [
-        { criteriaId: "1", score: 5, comment: "Procedimentos seguidos rigorosamente" },
-        { criteriaId: "2", score: 5, comment: "EPIs utilizados corretamente" },
-        { criteriaId: "3", score: 5, comment: "Todas as normas de segurança atendidas" },
-        { criteriaId: "4", score: 5, comment: "Qualidade técnica excepcional" },
-        { criteriaId: "5", score: 4, comment: "Documentação SMS completa" },
-      ],
-    },
-  },
-  {
-    id: "2",
-    title: "Inspeção de integridade dos risers de produção",
-    collaboratorId: "2",
-    collaboratorName: "Roberto Santos",
-    groupId: "6",
-    typeId: "2",
-    startDate: "2025-10-21T08:00",
-    endDate: "2025-10-21T16:00",
-    status: "pending",
-    observations: "Inspeção visual e ultrassônica dos risers 1, 2 e 3. Identificadas pequenas corrosões no riser 2 que necessitam acompanhamento",
-    photos: ["https://images.unsplash.com/photo-1565008447742-97f6f38c985c"],
-    documents: [{ name: "Riser_Inspection_Checklist.pdf", url: "#" }],
-    contractId: "4",
-    serviceLineId: "12",
-  },
-  {
-    id: "3",
-    title: "Limpeza dos tanques de armazenamento de óleo",
-    collaboratorId: "3",
-    collaboratorName: "Paulo Mendes",
-    groupId: "3",
-    typeId: "3",
-    startDate: "2025-10-22T04:00",
-    endDate: "2025-10-22T20:00",
-    status: "pending",
-    observations: "Limpeza interna dos tanques T-101 e T-102. Remoção de sedimentos e borra. Preparação para inspeção interna",
-    photos: [],
-    documents: [],
-    contractId: "4",
-    serviceLineId: "11",
-  },
-  {
-    id: "4",
-    title: "Calibração de transmissores de pressão",
-    collaboratorId: "4",
-    collaboratorName: "Maria Oliveira",
-    groupId: "1",
-    typeId: "4",
-    startDate: "2025-10-23T09:00",
-    endDate: "2025-10-23T17:00",
-    status: "approved",
-    observations: "Calibração de 15 transmissores de pressão da área de processo. Todos dentro da tolerância especificada",
-    photos: ["https://images.unsplash.com/photo-1518709268805-4e9042af2176"],
-    documents: [{ name: "Calibration_Certificates.pdf", url: "#" }],
+    collaboratorName: "Swellen",
     contractId: "1",
-    serviceLineId: "2",
-    approval: {
-      approverId: "3",
-      approverName: "Ana Rodrigues",
-      approvalDate: "2025-10-23T18:00",
-      criteriaScores: [
-        { criteriaId: "1", score: 5, comment: "Conformidade total com padrões" },
-        { criteriaId: "2", score: 5, comment: "EPIs corretos utilizados" },
-        { criteriaId: "3", score: 5, comment: "Procedimentos de segurança seguidos" },
-        { criteriaId: "4", score: 5, comment: "Calibração precisa e documentada" },
-      ],
-    },
-  },
-  {
-    id: "5",
-    title: "Ronda de segurança - Turno noturno",
-    collaboratorId: "5",
-    collaboratorName: "José Lima",
-    groupId: "2",
-    typeId: "5",
-    startDate: "2025-10-23T22:00",
-    endDate: "2025-10-24T06:00",
-    status: "rejected",
-    observations: "Ronda completa da plataforma. Identificado vazamento menor na linha de gás do módulo C",
-    photos: ["https://images.unsplash.com/photo-1621905252507-b35492cc74b4"],
-    documents: [],
-    approval: {
-      approverId: "3",
-      approverName: "Ana Rodrigues",
-      approvalDate: "2025-10-24T07:00",
-      criteriaScores: [
-        { criteriaId: "1", score: 3, comment: "Vazamento não foi reportado imediatamente" },
-        { criteriaId: "2", score: 5, comment: "EPIs utilizados" },
-        { criteriaId: "3", score: 2, comment: "Falha no procedimento de emergência" },
-      ],
-      rejectionReason: "Vazamento não foi comunicado imediatamente conforme procedimento de emergência",
-    },
-    contractId: "2",
-    serviceLineId: "5",
-  },
-  {
-    id: "6",
-    title: "Teste hidrostático de linhas de alta pressão",
-    collaboratorId: "1",
-    collaboratorName: "Carlos Pereira",
-    groupId: "1",
-    typeId: "6",
-    startDate: "2025-10-24T10:00",
-    endDate: "2025-10-24T15:00",
+    groupId: "group_1",
+    serviceLineId: "line_1",
+    typeId: "type_1",
     status: "pending",
-    observations: "Teste de pressão das linhas HP-001 a HP-005. Pressão de teste: 1.5x pressão de trabalho",
+    startDate: "2025-01-15T09:00:00Z",
+    endDate: "2025-01-15T17:00:00Z",
     photos: [],
     documents: [],
-    contractId: "3",
-    serviceLineId: "7",
+    observations: "Implementação da API REST para o módulo de usuários",
+    editHistory: [],
+  },
+  {
+    id: "activity_2",
+    title: "Configuração de servidor",
+    collaboratorId: "2",
+    collaboratorName: "João",
+    contractId: "1",
+    groupId: "group_2",
+    serviceLineId: "line_2",
+    typeId: "type_2",
+    status: "approved",
+    startDate: "2025-01-16T08:00:00Z",
+    endDate: "2025-01-16T16:00:00Z",
+    photos: [],
+    documents: [],
+    observations: "Servidor configurado com sucesso",
+    editHistory: [],
+    approval: {
+      approverId: "3",
+      approverName: "Leo",
+      approvalDate: "2025-01-16T18:00:00Z",
+      criteriaScores: [
+        { criteriaId: "crit_1", score: 5, comment: "" },
+        { criteriaId: "crit_2", score: 4, comment: "" }
+      ],
+      rejectionReason: "",
+    },
   },
 ];
 
@@ -296,209 +343,93 @@ export const contracts: Contract[] = [
     id: "1",
     name: "Projeto Modernização IT",
     billingType: "HH",
+    status: "active",
+    createdAt: "2025-01-01T00:00:00Z",
     serviceGroups: [
-      { id: "1", name: "Desenvolvimento", color: "#3B82F6", contractId: "1" },
-      { id: "2", name: "Infraestrutura", color: "#059669", contractId: "1" },
+      {
+        id: "group_1",
+        name: "Desenvolvimento",
+        color: "#3B82F6",
+        contractId: "1"
+      },
+      {
+        id: "group_2", 
+        name: "Infraestrutura",
+        color: "#10B981",
+        contractId: "1"
+      },
+      {
+        id: "group_3",
+        name: "Testes",
+        color: "#F59E0B",
+        contractId: "1"
+      }
     ],
     serviceLines: [
-      { id: "1", name: "Desenvolvimento de Software", description: "Desenvolvimento e manutenção de sistemas", code: "DEV-001", value: 150.00, groupId: "1" },
-      { id: "2", name: "Infraestrutura de TI", description: "Gestão e manutenção da infraestrutura tecnológica", code: "INF-001", value: 120.00, groupId: "2" },
-      { id: "3", name: "Consultoria Técnica", description: "Consultoria especializada em tecnologia", code: "CON-001", value: 200.00, groupId: "1" },
+      {
+        id: "line_1",
+        name: "Desenvolvimento Backend",
+        description: "API REST e serviços backend",
+        code: "DEV-BE",
+        value: 150.00,
+        groupId: "group_1"
+      },
+      {
+        id: "line_2",
+        name: "Desenvolvimento Frontend", 
+        description: "Interface de usuário React",
+        code: "DEV-FE",
+        value: 120.00,
+        groupId: "group_1"
+      },
+      {
+        id: "line_3",
+        name: "Configuração de Servidores",
+        description: "Deploy e configuração de infraestrutura",
+        code: "INFRA-SRV",
+        value: 200.00,
+        groupId: "group_2"
+      }
+    ],
+    contractUsers: [
+      {
+        id: "cu_1",
+        userId: "1",
+        contractId: "1",
+        role: "colaborador",
+        serviceGroups: ["group_1"],
+        serviceLines: ["line_1", "line_2"],
+        isActive: true,
+        assignedAt: "2025-01-01T00:00:00Z",
+        assignedBy: "admin"
+      },
+      {
+        id: "cu_2",
+        userId: "2", 
+        contractId: "1",
+        role: "lider",
+        serviceGroups: ["group_1", "group_2"],
+        serviceLines: ["line_1", "line_2", "line_3"],
+        isActive: true,
+        assignedAt: "2025-01-01T00:00:00Z",
+        assignedBy: "admin"
+      },
+      {
+        id: "cu_3",
+        userId: "4",
+        contractId: "1",
+        role: "admin",
+        serviceGroups: ["group_1", "group_2", "group_3"],
+        serviceLines: ["line_1", "line_2", "line_3"],
+        isActive: true,
+        assignedAt: "2025-01-01T00:00:00Z",
+        assignedBy: "admin"
+      }
     ],
     config: {
       evidenceRequired: true,
-      documentsRequired: true,
-      resourcesRequired: false,
-      unitRequired: true,
-      demandRequesterRequired: true,
-      controlPlannedDates: true,
-      evaluationType: "numeric",
-      evaluationResult: "average"
-    },
-    dynamicFields: [
-      {
-        id: "field-1",
-        name: "cliente_nome",
-        label: "Nome do Cliente",
-        type: "text",
-        required: true,
-        placeholder: "Digite o nome do cliente",
-        description: "Nome completo do cliente para o projeto",
-        order: 0,
-        isActive: true,
-        validation: {
-          minLength: 3,
-          maxLength: 100
-        }
-      },
-      {
-        id: "field-2",
-        name: "prioridade",
-        label: "Prioridade",
-        type: "dropdown",
-        required: true,
-        description: "Nível de prioridade da atividade",
-        order: 1,
-        isActive: true,
-        options: [
-          { id: "opt-1", label: "Baixa", value: "baixa" },
-          { id: "opt-2", label: "Média", value: "media" },
-          { id: "opt-3", label: "Alta", value: "alta" },
-          { id: "opt-4", label: "Crítica", value: "critica" }
-        ]
-      }
-    ],
-    evaluationCriteria: [
-      {
-        id: "criteria-1",
-        name: "Qualidade Técnica",
-        maxScore: 5,
-        required: true,
-        contractId: "1"
-      },
-      {
-        id: "criteria-2",
-        name: "Tempo de Entrega",
-        maxScore: 5,
-        required: true,
-        contractId: "1"
-      },
-      {
-        id: "criteria-3",
-        name: "Conformidade com Padrões",
-        maxScore: 5,
-        required: false,
-        contractId: "1"
-      }
-    ],
-    createdAt: "2025-01-15T10:00:00Z",
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "Suporte Operacional",
-    billingType: "BPO",
-    serviceGroups: [
-      { id: "3", name: "Suporte", color: "#DC2626", contractId: "2" },
-    ],
-    serviceLines: [
-      { id: "4", name: "Help Desk", description: "Suporte técnico aos usuários", code: "HD-001", value: 80.00, groupId: "3" },
-      { id: "5", name: "Monitoramento", description: "Monitoramento 24/7 dos sistemas", code: "MON-001", value: 100.00, groupId: "3" }
-    ],
-    config: {
-      evidenceRequired: false,
       documentsRequired: false,
       resourcesRequired: false,
-      unitRequired: false,
-      demandRequesterRequired: false,
-      controlPlannedDates: false,
-      evaluationType: "stars",
-      evaluationResult: "sum"
-    },
-    dynamicFields: [],
-    evaluationCriteria: [
-      {
-        id: "criteria-4",
-        name: "Atendimento ao Cliente",
-        maxScore: 5,
-        required: true,
-        contractId: "2"
-      },
-      {
-        id: "criteria-5",
-        name: "Disponibilidade",
-        maxScore: 5,
-        required: true,
-        contractId: "2"
-      }
-    ],
-    createdAt: "2025-02-01T09:00:00Z",
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Desenvolvimento Web",
-    billingType: "ENTREGAVEL",
-    serviceGroups: [
-      { id: "4", name: "Frontend", color: "#7C3AED", contractId: "3" },
-      { id: "5", name: "Backend", color: "#EA580C", contractId: "3" },
-    ],
-    serviceLines: [
-      { id: "7", name: "Frontend Development", description: "Desenvolvimento de interfaces web", code: "FE-001", value: 180.00, groupId: "4" },
-      { id: "8", name: "Backend Development", description: "Desenvolvimento de APIs e serviços", code: "BE-001", value: 200.00, groupId: "5" },
-      { id: "9", name: "DevOps", description: "Automação e deploy de aplicações", code: "DO-001", value: 220.00, groupId: "5" },
-    ],
-    config: {
-      evidenceRequired: true,
-      documentsRequired: true,
-      resourcesRequired: true,
-      unitRequired: true,
-      demandRequesterRequired: true,
-      controlPlannedDates: true,
-      evaluationType: "numeric",
-      evaluationResult: "average"
-    },
-    dynamicFields: [
-      {
-        id: "field-3",
-        name: "tecnologia",
-        label: "Tecnologia Utilizada",
-        type: "multidropdown",
-        required: false,
-        description: "Tecnologias utilizadas no desenvolvimento",
-        order: 0,
-        isActive: true,
-        options: [
-          { id: "opt-5", label: "React", value: "react" },
-          { id: "opt-6", label: "Node.js", value: "nodejs" },
-          { id: "opt-7", label: "TypeScript", value: "typescript" },
-          { id: "opt-8", label: "PostgreSQL", value: "postgresql" }
-        ]
-      }
-    ],
-    evaluationCriteria: [
-      {
-        id: "criteria-6",
-        name: "Qualidade do Código",
-        maxScore: 5,
-        required: true,
-        contractId: "3"
-      },
-      {
-        id: "criteria-7",
-        name: "Funcionalidade",
-        maxScore: 5,
-        required: true,
-        contractId: "3"
-      },
-      {
-        id: "criteria-8",
-        name: "Performance",
-        maxScore: 5,
-        required: false,
-        contractId: "3"
-      }
-    ],
-    createdAt: "2025-03-10T14:00:00Z",
-    status: "active",
-  },
-  {
-    id: "4",
-    name: "Manutenção Offshore",
-    billingType: "HH",
-    serviceGroups: [
-      { id: "6", name: "Manutenção", color: "#059669", contractId: "4" },
-      { id: "7", name: "Inspeção", color: "#DC2626", contractId: "4" },
-    ],
-    serviceLines: [
-      { id: "10", name: "Manutenção Preventiva", description: "Manutenção programada de equipamentos", code: "MP-001", value: 300.00, groupId: "6" },
-      { id: "11", name: "Manutenção Corretiva", description: "Reparos emergenciais", code: "MC-001", value: 350.00, groupId: "6" },
-      { id: "12", name: "Inspeção de Segurança", description: "Inspeções periódicas de segurança", code: "IS-001", value: 250.00, groupId: "7" },
-    ],
-    config: {
-      evidenceRequired: true,
-      documentsRequired: true,
-      resourcesRequired: true,
       unitRequired: true,
       demandRequesterRequired: false,
       controlPlannedDates: true,
@@ -507,58 +438,183 @@ export const contracts: Contract[] = [
     },
     dynamicFields: [
       {
-        id: "field-4",
-        name: "equipamento",
-        label: "Equipamento",
+        id: "field_1",
+        name: "prioridade",
+        label: "Prioridade da Atividade",
         type: "dropdown",
         required: true,
-        description: "Equipamento que será mantido",
-        order: 0,
-        isActive: true,
+        placeholder: "Selecione a prioridade",
+        description: "Nível de prioridade da atividade",
         options: [
-          { id: "opt-9", label: "BOP Stack", value: "bop" },
-          { id: "opt-10", label: "Riser", value: "riser" },
-          { id: "opt-11", label: "Compressor", value: "compressor" },
-          { id: "opt-12", label: "Guindaste", value: "guindaste" }
-        ]
-      },
-      {
-        id: "field-5",
-        name: "urgencia",
-        label: "Urgência",
-        type: "rating",
-        required: true,
-        description: "Nível de urgência da manutenção (1-5)",
+          { id: "baixa", label: "Baixa", value: "baixa" },
+          { id: "media", label: "Média", value: "media" },
+          { id: "alta", label: "Alta", value: "alta" },
+          { id: "critica", label: "Crítica", value: "critica" }
+        ],
         order: 1,
         isActive: true,
-        min: 1,
-        max: 5
-      }
-    ],
-    evaluationCriteria: [
-      {
-        id: "criteria-9",
-        name: "Segurança Operacional",
-        maxScore: 5,
-        required: true,
-        contractId: "4"
+        contractId: "1"
       },
       {
-        id: "criteria-10",
-        name: "Conformidade Técnica",
-        maxScore: 5,
-        required: true,
-        contractId: "4"
-      },
-      {
-        id: "criteria-11",
-        name: "Documentação",
-        maxScore: 5,
+        id: "field_2",
+        name: "complexidade",
+        label: "Complexidade",
+        type: "rating",
         required: false,
-        contractId: "4"
+        description: "Nível de complexidade da atividade (1-5)",
+        min: 1,
+        max: 5,
+        order: 2,
+        isActive: true,
+        contractId: "1"
+      },
+      {
+        id: "field_3",
+        name: "observacoes_tecnicas",
+        label: "Observações Técnicas",
+        type: "text",
+        required: false,
+        placeholder: "Descreva observações técnicas relevantes...",
+        description: "Observações técnicas adicionais sobre a atividade",
+        validation: {
+          maxLength: 500
+        },
+        order: 3,
+        isActive: true,
+        contractId: "1"
       }
     ],
-    createdAt: "2025-01-20T08:00:00Z",
-    status: "active",
-  },
+    evaluationCriteria: [],
+    activityTypes: [
+      {
+        id: "type_1",
+        name: "Desenvolvimento",
+        description: "Atividades de desenvolvimento de software",
+        color: "#3B82F6",
+        contractId: "1",
+        isActive: true,
+        createdAt: "2025-01-01T00:00:00Z",
+        updatedAt: "2025-01-01T00:00:00Z"
+      },
+      {
+        id: "type_2",
+        name: "Manutenção",
+        description: "Atividades de manutenção e suporte",
+        color: "#10B981",
+        contractId: "1",
+        isActive: true,
+        createdAt: "2025-01-01T00:00:00Z",
+        updatedAt: "2025-01-01T00:00:00Z"
+      }
+    ],
+    scopes: [
+      {
+        id: "scope_1",
+        name: "Frontend",
+        description: "Desenvolvimento de interface de usuário",
+        color: "#3B82F6",
+        contractId: "1",
+        isActive: true,
+        createdAt: "2025-01-01T00:00:00Z",
+        updatedAt: "2025-01-01T00:00:00Z"
+      },
+      {
+        id: "scope_2",
+        name: "Backend",
+        description: "Desenvolvimento de APIs e serviços",
+        color: "#10B981",
+        contractId: "1",
+        isActive: true,
+        createdAt: "2025-01-01T00:00:00Z",
+        updatedAt: "2025-01-01T00:00:00Z"
+      }
+    ],
+    statuses: [
+      {
+        id: "status_1",
+        name: "Pendente",
+        description: "Atividade aguardando início",
+        color: "#6B7280",
+        contractId: "1",
+        isActive: true,
+        createdAt: "2025-01-01T00:00:00Z",
+        updatedAt: "2025-01-01T00:00:00Z"
+      },
+      {
+        id: "status_2",
+        name: "Em Andamento",
+        description: "Atividade em execução",
+        color: "#F59E0B",
+        contractId: "1",
+        isActive: true,
+        createdAt: "2025-01-01T00:00:00Z",
+        updatedAt: "2025-01-01T00:00:00Z"
+      },
+      {
+        id: "status_3",
+        name: "Concluída",
+        description: "Atividade finalizada",
+        color: "#10B981",
+        contractId: "1",
+        isActive: true,
+        createdAt: "2025-01-01T00:00:00Z",
+        updatedAt: "2025-01-01T00:00:00Z"
+      }
+    ],
+    units: [
+      {
+        id: "unit_1",
+        name: "Escritório Central",
+        code: "EC001",
+        description: "Unidade principal de desenvolvimento",
+        contractId: "1",
+        isActive: true,
+        createdAt: "2025-01-01T00:00:00Z",
+        updatedAt: "2025-01-01T00:00:00Z"
+      },
+      {
+        id: "unit_2",
+        name: "Filial São Paulo",
+        code: "SP001",
+        description: "Unidade regional de São Paulo",
+        contractId: "1",
+        isActive: true,
+        createdAt: "2025-01-01T00:00:00Z",
+        updatedAt: "2025-01-01T00:00:00Z"
+      }
+    ],
+    workShifts: [
+      {
+        id: "shift_1",
+        name: "Diurno",
+        description: "Jornada de trabalho diurna (8h às 17h)",
+        color: "#3B82F6",
+        contractId: "1",
+        isActive: true,
+        createdAt: "2025-01-01T00:00:00Z",
+        updatedAt: "2025-01-01T00:00:00Z"
+      },
+      {
+        id: "shift_2",
+        name: "Noturno",
+        description: "Jornada de trabalho noturna (22h às 6h)",
+        color: "#1F2937",
+        contractId: "1",
+        isActive: true,
+        createdAt: "2025-01-01T00:00:00Z",
+        updatedAt: "2025-01-01T00:00:00Z"
+      },
+      {
+        id: "shift_3",
+        name: "Madrugada",
+        description: "Jornada de trabalho na madrugada (0h às 8h)",
+        color: "#7C3AED",
+        contractId: "1",
+        isActive: true,
+        createdAt: "2025-01-01T00:00:00Z",
+        updatedAt: "2025-01-01T00:00:00Z"
+      }
+    ]
+  }
 ];
+

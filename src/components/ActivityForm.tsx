@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,17 +14,25 @@ import { Card } from "@/components/ui/card";
 import { Upload, X, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { useServiceGroups } from "@/hooks/useServiceGroups";
-import { useActivityTypes } from "@/hooks/useActivityTypes";
 import { useDynamicFields } from "@/hooks/useDynamicFields";
+import { useUsers } from "@/hooks/useUsers";
 import { DynamicForm } from "@/components/DynamicForm";
-import { Activity } from "@/data/mockData";
+import { Activity, ServiceLine } from "@/data/mockData";
 
 export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) => {
   const { user, currentContract } = useAuth();
-  const { groups, isLoading: groupsLoading } = useServiceGroups();
-  const { types, isLoading: typesLoading } = useActivityTypes();
   const { fields, isLoading: fieldsLoading } = useDynamicFields();
+  
+  // Debug: Log dos campos dinâmicos
+  useEffect(() => {
+    console.log("🔍 ActivityForm - Campos dinâmicos:", {
+      fields,
+      fieldsLoading,
+      currentContract: currentContract?.id,
+      dynamicFieldsFromContract: currentContract?.dynamicFields
+    });
+  }, [fields, fieldsLoading, currentContract]);
+  const { users } = useUsers();
   
   const [photos, setPhotos] = useState<File[]>([]);
   const [documents, setDocuments] = useState<File[]>([]);
@@ -33,6 +41,7 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
   
   const [formData, setFormData] = useState({
     title: "",
+    collaboratorId: "",
     groupId: "",
     typeId: "",
     serviceLineId: "",
@@ -47,12 +56,78 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
     unit: "",
   });
 
+  // Buscar dados do contrato selecionado
+  const activityTypes = currentContract?.activityTypes || [];
+  const scopes = currentContract?.scopes || [];
+  const statuses = currentContract?.statuses || [];
+  const units = currentContract?.units || [];
+  const workShifts = currentContract?.workShifts || [];
+
+  // Lógica baseada em roles para filtrar dados disponíveis
+  const availableCollaborators = useMemo(() => {
+    if (!currentContract || !users) return [];
+    
+    // Buscar usuários atribuídos ao contrato atual
+    const contractUserIds = currentContract.contractUsers
+      .filter(cu => cu.isActive)
+      .map(cu => cu.userId);
+    
+    return users.filter(u => 
+      u.isActive && 
+      contractUserIds.includes(u.id) && 
+      (u.role === "colaborador" || u.role === "lider" || u.role === "admin")
+    );
+  }, [currentContract, users]);
+
+  const availableGroups = useMemo(() => {
+    if (!currentContract || !user) return [];
+    
+    // Se for colaborador, só pode ver seus grupos atribuídos
+    if (user.role === "colaborador") {
+      const userContract = currentContract.contractUsers.find(cu => cu.userId === user.id);
+      
+      if (!userContract) {
+        return [];
+      }
+      
+      return currentContract.serviceGroups.filter(group => 
+        userContract.serviceGroups.includes(group.id)
+      );
+    }
+    
+    // Admin, Líder e Fiscal podem ver todos os grupos do contrato
+    return currentContract.serviceGroups;
+  }, [currentContract, user]);
+
+  const availableServiceLines = useMemo(() => {
+    if (!currentContract || !formData.groupId) return [];
+    
+    // Filtrar linhas de serviço do grupo selecionado
+    const groupLines = currentContract.serviceLines.filter(line => 
+      line.groupId === formData.groupId
+    );
+    
+    // Se for colaborador, só pode ver suas linhas atribuídas
+    if (user?.role === "colaborador") {
+      const userContract = currentContract.contractUsers.find(cu => cu.userId === user.id);
+      if (!userContract) return [];
+      
+      return groupLines.filter(line => 
+        userContract.serviceLines.includes(line.id)
+      );
+    }
+    
+    // Líder e Fiscal podem ver todas as linhas do grupo
+    return groupLines;
+  }, [currentContract, formData.groupId, user]);
+
   // Inicializar dados do usuário logado
   useEffect(() => {
     if (user) {
       setFormData(prev => ({
         ...prev,
-        // Preencher automaticamente com dados do usuário logado
+        // Para colaborador, definir automaticamente como ele mesmo
+        collaboratorId: user.role === "colaborador" ? user.id : prev.collaboratorId,
       }));
     }
   }, [user]);
@@ -89,6 +164,11 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
       // Validações obrigatórias
       if (!formData.title.trim()) {
         toast.error("Título da atividade é obrigatório");
+        return;
+      }
+      
+      if (!formData.collaboratorId) {
+        toast.error("Colaborador é obrigatório");
         return;
       }
       
@@ -129,45 +209,30 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
       // Validação de sobreposição (opcional - pode ser configurável)
       // TODO: Implementar validação de sobreposição se necessário
       
+      // Buscar dados do colaborador selecionado
+      const selectedCollaborator = users.find(u => u.id === formData.collaboratorId);
+      const selectedGroup = availableGroups.find(g => g.id === formData.groupId);
+      const selectedType = activityTypes.find(t => t.id === formData.typeId);
+      const selectedServiceLine = availableServiceLines.find(sl => sl.id === formData.serviceLineId);
+
       // Criar atividade
       const newActivity: Omit<Activity, "id"> = {
         title: formData.title,
-        collaboratorId: user?.id || "",
-        collaboratorName: user?.name || "",
+        collaboratorId: formData.collaboratorId,
+        collaboratorName: selectedCollaborator?.name || "",
         groupId: formData.groupId,
-        groupName: groups.find(g => g.id === formData.groupId)?.name || "",
         typeId: formData.typeId,
-        typeName: types.find(t => t.id === formData.typeId)?.name || "",
         contractId: currentContract?.id || "",
-        contractName: currentContract?.name || "",
         serviceLineId: formData.serviceLineId,
-        serviceLineName: "", // TODO: Buscar nome da linha de serviço
         startDate: startDateTime.toISOString(),
         endDate: endDateTime.toISOString(),
         status: formData.status,
-        scope: formData.scope,
-        workShift: formData.workShift,
-        unit: formData.unit,
         observations: formData.observations,
-        photos: photos.map(file => ({
-          id: `photo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          name: file.name,
-          url: URL.createObjectURL(file),
-          uploadedAt: new Date().toISOString(),
-        })),
+        photos: photos.map(file => URL.createObjectURL(file)),
         documents: documents.map(file => ({
-          id: `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           name: file.name,
           url: URL.createObjectURL(file),
-          uploadedAt: new Date().toISOString(),
         })),
-        dynamicFields: Object.entries(dynamicFieldsData).map(([fieldId, value]) => ({
-          fieldId,
-          value,
-        })),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        editHistory: [],
       };
       
       toast.success("Atividade registrada com sucesso!");
@@ -181,7 +246,7 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
     }
   };
 
-  if (groupsLoading || typesLoading || fieldsLoading) {
+  if (fieldsLoading) {
     return (
       <div className="flex items-center justify-center py-8">
         <Loader2 className="h-6 w-6 animate-spin mr-2" />
@@ -192,13 +257,46 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Informações do Colaborador (preenchido automaticamente) */}
-      <div className="bg-muted/50 p-4 rounded-lg">
-        <h3 className="font-medium mb-2">Colaborador</h3>
-        <p className="text-sm text-muted-foreground">
-          {user?.name} ({user?.email}) - {user?.role}
-        </p>
-      </div>
+      {/* Seleção de Colaborador baseada no role */}
+      {user?.role === "colaborador" ? (
+        <div className="bg-muted/50 p-4 rounded-lg">
+          <h3 className="font-medium mb-2">Colaborador</h3>
+          <p className="text-sm text-muted-foreground">
+            {user?.name} ({user?.email}) - {user?.role}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <Label htmlFor="collaboratorId">Colaborador *</Label>
+          <Select
+            value={formData.collaboratorId}
+            onValueChange={(value) => setFormData({ ...formData, collaboratorId: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o colaborador" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableCollaborators.length === 0 ? (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                  Nenhum colaborador disponível para este contrato
+                </div>
+              ) : (
+                availableCollaborators.map((collaborator) => (
+                  <SelectItem key={collaborator.id} value={collaborator.id}>
+                    {collaborator.name} ({collaborator.email}) - {collaborator.role}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+          {availableCollaborators.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              Nenhum colaborador foi atribuído a este contrato. 
+              Acesse as configurações do contrato para atribuir colaboradores.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Campos Obrigatórios */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -218,27 +316,63 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
           <Select
             value={formData.workShift}
             onValueChange={(value) => setFormData({ ...formData, workShift: value })}
+            disabled={workShifts.length === 0}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Selecione a jornada" />
+              <SelectValue placeholder={workShifts.length === 0 ? "Nenhuma jornada disponível" : "Selecione a jornada"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="diurno">Diurno</SelectItem>
-              <SelectItem value="noturno">Noturno</SelectItem>
-              <SelectItem value="madrugada">Madrugada</SelectItem>
+              {workShifts.length === 0 ? (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                  Nenhuma jornada cadastrada para este contrato
+                </div>
+              ) : (
+                workShifts.map((workShift) => (
+                  <SelectItem key={workShift.id} value={workShift.id}>
+                    {workShift.name}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
+          {workShifts.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              Nenhuma jornada foi cadastrada para este contrato. 
+              Acesse as configurações para cadastrar jornadas.
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="unit">Unidade/Gerência *</Label>
-          <Input
-            id="unit"
-            required
+          <Select
             value={formData.unit}
-            onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-            placeholder="Local de atuação"
-          />
+            onValueChange={(value) => setFormData({ ...formData, unit: value })}
+            disabled={units.length === 0}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={units.length === 0 ? "Nenhuma unidade disponível" : "Selecione a unidade"} />
+            </SelectTrigger>
+            <SelectContent>
+              {units.length === 0 ? (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                  Nenhuma unidade cadastrada para este contrato
+                </div>
+              ) : (
+                units.map((unit) => (
+                  <SelectItem key={unit.id} value={unit.id}>
+                    {unit.name} {unit.code && `(${unit.code})`}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+          {units.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              Nenhuma unidade foi cadastrada para este contrato. 
+              Acesse as configurações para cadastrar unidades.
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -246,18 +380,21 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
           <Select
             value={formData.groupId}
             onValueChange={(value) => setFormData({ ...formData, groupId: value, serviceLineId: "" })}
-            disabled={groups.length === 0}
+            disabled={availableGroups.length === 0}
           >
             <SelectTrigger>
-              <SelectValue placeholder={groups.length === 0 ? "Nenhum grupo disponível" : "Selecione o grupo"} />
+              <SelectValue placeholder={availableGroups.length === 0 ? "Nenhum grupo disponível" : "Selecione o grupo"} />
             </SelectTrigger>
             <SelectContent>
-              {groups.length === 0 ? (
-                <SelectItem value="" disabled>
-                  Nenhum grupo de trabalho cadastrado para este contrato
-                </SelectItem>
+              {availableGroups.length === 0 ? (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                  {user?.role === "colaborador" 
+                    ? "Você não está atribuído a nenhum grupo de trabalho" 
+                    : "Nenhum grupo de trabalho cadastrado para este contrato"
+                  }
+                </div>
               ) : (
-                groups.map((group) => (
+                availableGroups.map((group) => (
                   <SelectItem key={group.id} value={group.id}>
                     {group.name}
                   </SelectItem>
@@ -265,10 +402,12 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
               )}
             </SelectContent>
           </Select>
-          {groups.length === 0 && (
+          {availableGroups.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              Nenhum grupo de trabalho foi cadastrado para este contrato. 
-              Acesse as configurações para cadastrar grupos.
+              {user?.role === "colaborador" 
+                ? "Você não está atribuído a nenhum grupo de trabalho. Entre em contato com seu líder."
+                : "Nenhum grupo de trabalho foi cadastrado para este contrato. Acesse as configurações para cadastrar grupos."
+              }
             </p>
           )}
         </div>
@@ -278,17 +417,46 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
           <Select
             value={formData.serviceLineId}
             onValueChange={(value) => setFormData({ ...formData, serviceLineId: value })}
-            disabled={!formData.groupId}
+            disabled={!formData.groupId || availableServiceLines.length === 0}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Selecione a linha de serviço" />
+              <SelectValue placeholder={
+                !formData.groupId 
+                  ? "Selecione primeiro um grupo de trabalho" 
+                  : availableServiceLines.length === 0 
+                    ? "Nenhuma linha disponível" 
+                    : "Selecione a linha de serviço"
+              } />
             </SelectTrigger>
             <SelectContent>
-              {/* TODO: Implementar linhas de serviço baseadas no grupo selecionado */}
-              <SelectItem value="linha1">Linha de Serviço 1</SelectItem>
-              <SelectItem value="linha2">Linha de Serviço 2</SelectItem>
+              {!formData.groupId ? (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                  Selecione primeiro um grupo de trabalho
+                </div>
+              ) : availableServiceLines.length === 0 ? (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                  {user?.role === "colaborador" 
+                    ? "Você não está atribuído a nenhuma linha de serviço deste grupo" 
+                    : "Nenhuma linha de serviço cadastrada para este grupo"
+                  }
+                </div>
+              ) : (
+                availableServiceLines.map((line) => (
+                  <SelectItem key={line.id} value={line.id}>
+                    {line.name} - R$ {line.value.toFixed(2)}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
+          {formData.groupId && availableServiceLines.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              {user?.role === "colaborador" 
+                ? "Você não está atribuído a nenhuma linha de serviço deste grupo. Entre em contato com seu líder."
+                : "Nenhuma linha de serviço foi cadastrada para este grupo. Acesse as configurações para cadastrar linhas."
+              }
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -296,29 +464,63 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
           <Select
             value={formData.typeId}
             onValueChange={(value) => setFormData({ ...formData, typeId: value })}
+            disabled={activityTypes.length === 0}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Selecione o tipo" />
+              <SelectValue placeholder={activityTypes.length === 0 ? "Nenhum tipo disponível" : "Selecione o tipo"} />
             </SelectTrigger>
             <SelectContent>
-              {types.map((type) => (
-                <SelectItem key={type.id} value={type.id}>
-                  {type.name}
-                </SelectItem>
-              ))}
+              {activityTypes.length === 0 ? (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                  Nenhum tipo de atividade cadastrado para este contrato
+                </div>
+              ) : (
+                activityTypes.map((type) => (
+                  <SelectItem key={type.id} value={type.id}>
+                    {type.name}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
+          {activityTypes.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              Nenhum tipo de atividade foi cadastrado para este contrato. 
+              Acesse as configurações para cadastrar tipos.
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="scope">Escopo da Atividade *</Label>
-          <Input
-            id="scope"
-            required
+          <Select
             value={formData.scope}
-            onChange={(e) => setFormData({ ...formData, scope: e.target.value })}
-            placeholder="Escopo da atividade"
-          />
+            onValueChange={(value) => setFormData({ ...formData, scope: value })}
+            disabled={scopes.length === 0}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={scopes.length === 0 ? "Nenhum escopo disponível" : "Selecione o escopo"} />
+            </SelectTrigger>
+            <SelectContent>
+              {scopes.length === 0 ? (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                  Nenhum escopo cadastrado para este contrato
+                </div>
+              ) : (
+                scopes.map((scope) => (
+                  <SelectItem key={scope.id} value={scope.id}>
+                    {scope.name}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+          {scopes.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              Nenhum escopo foi cadastrado para este contrato. 
+              Acesse as configurações para cadastrar escopos.
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -367,7 +569,7 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
       </div>
 
       {/* Campos Dinâmicos */}
-      {fields.length > 0 && (
+      {fields.length > 0 ? (
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Campos Adicionais</h3>
           <DynamicForm
@@ -375,6 +577,13 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
             values={dynamicFieldsData}
             onChange={setDynamicFieldsData}
           />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Campos Adicionais</h3>
+          <div className="text-sm text-muted-foreground">
+            Nenhum campo dinâmico configurado para este contrato.
+          </div>
         </div>
       )}
 

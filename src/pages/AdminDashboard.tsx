@@ -44,6 +44,7 @@ import { ActivityTypeForm } from '@/components/forms/ActivityTypeForm';
 import { EvaluationCriteriaForm } from '@/components/forms/EvaluationCriteriaForm';
 import { UserForm } from '@/components/forms/UserForm';
 import { ContractManagement } from '@/components/ContractManagement';
+import { AppHeader } from '@/components/AppHeader';
 import { User, UserRole } from '@/types/auth';
 
 interface Activity {
@@ -300,12 +301,20 @@ const AdminDashboard: React.FC = () => {
   const handleAddUser = async (data: Omit<User, "id">) => {
     setIsSubmitting(true);
     try {
-      addUser(data);
-      toast({ title: "Usuário adicionado com sucesso!" });
+      await addUser(data);
+      toast({ 
+        title: "Usuário adicionado com sucesso!", 
+        description: `Usuário ${data.name} foi criado no Supabase.` 
+      });
       setEditingUser(null);
       setIsUserModalOpen(false);
     } catch (error) {
-      toast({ title: "Erro ao adicionar usuário", variant: "destructive" });
+      console.error("Erro ao adicionar usuário:", error);
+      toast({ 
+        title: "Erro ao adicionar usuário", 
+        description: error.message || "Erro desconhecido ao criar usuário",
+        variant: "destructive" 
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -315,20 +324,40 @@ const AdminDashboard: React.FC = () => {
     if (!editingUser) return;
     setIsSubmitting(true);
     try {
-      updateUser(editingUser.id, data);
-      toast({ title: "Usuário atualizado com sucesso!" });
+      await updateUser(editingUser.id, data);
+      toast({ 
+        title: "Usuário atualizado com sucesso!", 
+        description: `Usuário ${data.name} foi atualizado no Supabase.` 
+      });
       setEditingUser(null);
       setIsUserModalOpen(false);
     } catch (error) {
-      toast({ title: "Erro ao atualizar usuário", variant: "destructive" });
+      console.error("Erro ao atualizar usuário:", error);
+      toast({ 
+        title: "Erro ao atualizar usuário", 
+        description: error.message || "Erro desconhecido ao atualizar usuário",
+        variant: "destructive" 
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDeleteUser = (id: string) => {
-    removeUser(id);
-    toast({ title: "Usuário removido com sucesso!" });
+  const handleDeleteUser = async (id: string) => {
+    try {
+      await removeUser(id);
+      toast({ 
+        title: "Usuário removido com sucesso!", 
+        description: "Usuário foi desativado no Supabase." 
+      });
+    } catch (error) {
+      console.error("Erro ao remover usuário:", error);
+      toast({ 
+        title: "Erro ao remover usuário", 
+        description: error.message || "Erro desconhecido ao remover usuário",
+        variant: "destructive" 
+      });
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -392,156 +421,21 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link to="/">
-                <Button variant="ghost" size="icon">
-                  <ArrowLeft className="w-4 h-4" />
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold">Dashboard Administrativo</h1>
-                <p className="text-sm text-muted-foreground">
-                  Gerencie contratos, atividades e usuários do sistema
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Dialog open={showCreateContract} onOpenChange={setShowCreateContract}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo Contrato
-                  </Button>
-                </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Criar Novo Contrato</DialogTitle>
-              <DialogDescription>
-                Preencha os dados para criar um novo contrato no sistema.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="contract-name">Nome do Contrato</Label>
-                <Input
-                  id="contract-name"
-                  value={newContract.name}
-                  onChange={(e) => setNewContract({ ...newContract, name: e.target.value })}
-                  placeholder="Ex: Projeto de Modernização"
-                />
-              </div>
-              <div>
-                <Label htmlFor="billing-type">Tipo de Cobrança</Label>
-                <Select
-                  value={newContract.billingType}
-                  onValueChange={(value: 'HH' | 'BPO' | 'ENTREGAVEL') => 
-                    setNewContract({ ...newContract, billingType: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="HH">Hora/Homem (HH)</SelectItem>
-                    <SelectItem value="BPO">Business Process Outsourcing (BPO)</SelectItem>
-                    <SelectItem value="ENTREGAVEL">Entregável</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="description">Descrição</Label>
-                <Textarea
-                  id="description"
-                  value={newContract.description}
-                  onChange={(e) => setNewContract({ ...newContract, description: e.target.value })}
-                  placeholder="Descrição detalhada do contrato..."
-                />
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setShowCreateContract(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleCreateContract}>
-                  Criar Contrato
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppHeader 
+        showContractInfo={false}
+        showBackButton={true}
+        backTo="/"
+        backLabel="Voltar ao Dashboard"
+      />
 
       <main className="container mx-auto px-4 py-8">
 
-      {/* Estatísticas Gerais */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Contratos</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{contracts.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Contratos ativos no sistema
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Usuários</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">4</div>
-            <p className="text-xs text-muted-foreground">
-              Usuários cadastrados
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Atividades Hoje</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{mockActivities.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Atividades registradas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              R$ {contractStats?.totalValue.toLocaleString() || '0'}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Valor total dos contratos
-            </p>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Seleção de Contrato e Conteúdo */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full max-w-6xl grid-cols-5">
+        <TabsList className="grid w-full max-w-6xl grid-cols-3">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="contracts">Contratos</TabsTrigger>
-          <TabsTrigger value="activities">Atividades</TabsTrigger>
-          <TabsTrigger value="criteria">Critérios</TabsTrigger>
           <TabsTrigger value="users">Usuários</TabsTrigger>
         </TabsList>
 
@@ -598,222 +492,6 @@ const AdminDashboard: React.FC = () => {
           <ContractManagement />
         </TabsContent>
 
-        <TabsContent value="activities" className="space-y-4">
-          {selectedContract ? (
-            <>
-              {/* Filtros */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Atividades - {selectedContract.name}</CardTitle>
-                  <CardDescription>
-                    Gerencie as atividades do contrato selecionado
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <div className="flex-1">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Buscar atividades..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-full md:w-48">
-                        <SelectValue placeholder="Filtrar por status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos os status</SelectItem>
-                        <SelectItem value="pending">Pendente</SelectItem>
-                        <SelectItem value="in_progress">Em Andamento</SelectItem>
-                        <SelectItem value="completed">Concluída</SelectItem>
-                        <SelectItem value="approved">Aprovada</SelectItem>
-                        <SelectItem value="rejected">Rejeitada</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Estatísticas do Contrato */}
-              {contractStats && (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-2xl font-bold">{contractStats.totalActivities}</div>
-                      <p className="text-sm text-muted-foreground">Total de Atividades</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-2xl font-bold text-green-600">{contractStats.completedActivities}</div>
-                      <p className="text-sm text-muted-foreground">Concluídas</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-2xl font-bold text-yellow-600">{contractStats.pendingActivities}</div>
-                      <p className="text-sm text-muted-foreground">Pendentes</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-2xl font-bold text-blue-600">{contractStats.approvedActivities}</div>
-                      <p className="text-sm text-muted-foreground">Aprovadas</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-
-              {/* Lista de Atividades */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Lista de Atividades</CardTitle>
-                  <CardDescription>
-                    {filteredActivities.length} atividades encontradas
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <div className="flex items-center justify-center p-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {filteredActivities.map((activity) => (
-                        <div key={activity.id} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="flex items-center space-x-4">
-                            {getStatusIcon(activity.status)}
-                            <div>
-                              <h3 className="font-medium">{activity.title}</h3>
-                              <p className="text-sm text-muted-foreground">
-                                Por {activity.collaboratorName} • {new Date(activity.createdAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            {getStatusBadge(activity.status)}
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                      {filteredActivities.length === 0 && (
-                        <div className="text-center py-8 text-muted-foreground">
-                          Nenhuma atividade encontrada
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </>
-          ) : (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">Selecione um Contrato</h3>
-                <p className="text-muted-foreground">
-                  Escolha um contrato na aba "Contratos" para visualizar suas atividades
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-
-        {/* CRITÉRIOS DE AVALIAÇÃO */}
-        <TabsContent value="criteria" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Critérios de Avaliação</h2>
-            <Button onClick={() => {
-              setEditingCriterion(null);
-              setIsCriterionModalOpen(true);
-            }}>
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Critério
-            </Button>
-          </div>
-          
-          <Dialog open={isCriterionModalOpen} onOpenChange={setIsCriterionModalOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingCriterion ? "Editar Critério" : "Adicionar Critério"}
-                </DialogTitle>
-              </DialogHeader>
-              <EvaluationCriteriaForm
-                criterion={editingCriterion}
-                onSubmit={editingCriterion ? handleUpdateCriterion : handleAddCriterion}
-                onCancel={() => {
-                  setEditingCriterion(null);
-                  setIsCriterionModalOpen(false);
-                }}
-                isLoading={isSubmitting}
-              />
-            </DialogContent>
-          </Dialog>
-          
-          {criteriaLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              <span>Carregando critérios...</span>
-            </div>
-          ) : criteria.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>Nenhum critério de avaliação configurado ainda.</p>
-              <p className="text-sm">Clique em "Novo Critério" para começar.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {criteria.map((criterion) => (
-                <div
-                  key={criterion.id}
-                  className="border rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="font-medium">{criterion.name}</span>
-                    {criterion.required && (
-                      <Badge variant="destructive" className="text-xs">Obrigatório</Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm text-muted-foreground">
-                      Máx: {criterion.maxScore}
-                    </span>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => {
-                          setEditingCriterion(criterion);
-                          setIsCriterionModalOpen(true);
-                        }}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleDeleteCriterion(criterion.id)}
-                      >
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
 
         {/* USUÁRIOS */}
         <TabsContent value="users" className="space-y-4">

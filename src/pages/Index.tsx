@@ -24,15 +24,17 @@ import { ActivityFilters, ActivityFiltersType } from "@/components/ActivityFilte
 import { ActivityEditModal } from "@/components/ActivityEditModal";
 import { EditLog, Activity } from "@/data/mockData";
 import { Dashboard } from "@/components/Dashboard";
+import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
+import { useActivities } from "@/hooks/useActivities";
 import { Plus, Settings, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const { toast } = useToast();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, currentContract } = useAuth();
+  const { activities, addActivity, updateActivity, getUserActivities, isLoading: activitiesLoading } = useActivities();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [approvalOpen, setApprovalOpen] = useState(false);
@@ -44,48 +46,9 @@ const Index = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
 
-  // Carregar atividades do localStorage
-  useEffect(() => {
-    const loadActivities = () => {
-      try {
-        const stored = localStorage.getItem("activities");
-        if (stored) {
-          const storedActivities: Activity[] = JSON.parse(stored);
-          setActivities(storedActivities);
-        } else {
-          // Carregar dados iniciais
-          const { activities: initialActivities } = require("@/data/mockData");
-          setActivities(initialActivities);
-          localStorage.setItem("activities", JSON.stringify(initialActivities));
-        }
-      } catch (error) {
-        console.error("Erro ao carregar atividades:", error);
-        setActivities([]);
-      }
-    };
-
-    loadActivities();
-  }, []);
-
-  // Salvar atividades no localStorage
-  const saveActivities = (newActivities: Activity[]) => {
-    try {
-      localStorage.setItem("activities", JSON.stringify(newActivities));
-      setActivities(newActivities);
-    } catch (error) {
-      console.error("Erro ao salvar atividades:", error);
-    }
-  };
-
   // Adicionar nova atividade
   const handleAddActivity = (activityData: Omit<Activity, "id">) => {
-    const newActivity: Activity = {
-      ...activityData,
-      id: `activity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    };
-    
-    const updatedActivities = [...activities, newActivity];
-    saveActivities(updatedActivities);
+    addActivity(activityData);
     setIsDialogOpen(false);
     
     toast({
@@ -95,23 +58,20 @@ const Index = () => {
   };
 
   const handleApprove = (activityId: string, scores: any[], rejectionReason?: string) => {
-    const updatedActivities = activities.map(activity =>
-      activity.id === activityId
-        ? {
-            ...activity,
-            status: rejectionReason ? "rejected" : "approved",
-            approval: {
-              approverId: currentUser?.id || "",
-              approverName: currentUser?.name || "",
-              approvalDate: new Date().toISOString(),
-              criteriaScores: scores,
-              rejectionReason,
-            },
-          }
-        : activity
-    );
+    const activity = activities.find(a => a.id === activityId);
+    if (activity) {
+      updateActivity(activityId, {
+        status: (rejectionReason ? "rejected" : "approved") as "approved" | "rejected",
+        approval: {
+          approverId: currentUser?.id || "",
+          approverName: currentUser?.name || "",
+          approvalDate: new Date().toISOString(),
+          criteriaScores: scores,
+          rejectionReason,
+        },
+      });
+    }
     
-    saveActivities(updatedActivities);
     setApprovalOpen(false);
     toast({
       title: rejectionReason ? "Atividade reprovada" : "Atividade aprovada",
@@ -125,16 +85,12 @@ const Index = () => {
   };
 
   const handleSaveEdit = (updatedActivity: Activity, editLog: EditLog) => {
-    const updatedActivities = activities.map(activity =>
-      activity.id === updatedActivity.id ? updatedActivity : activity
-    );
-    saveActivities(updatedActivities);
+    updateActivity(updatedActivity.id, updatedActivity);
   };
 
   const handleDuplicate = (activity: Activity) => {
-    const duplicatedActivity: Activity = {
+    const duplicatedActivity: Omit<Activity, "id"> = {
       ...activity,
-      id: `activity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       title: `${activity.title} (Cópia)`,
       status: "pending",
       startDate: new Date().toISOString(),
@@ -146,8 +102,7 @@ const Index = () => {
       observations: "",
     };
 
-    const updatedActivities = [...activities, duplicatedActivity];
-    saveActivities(updatedActivities);
+    addActivity(duplicatedActivity);
     
     toast({
       title: "Atividade duplicada",
@@ -156,12 +111,10 @@ const Index = () => {
   };
 
 
-  const filteredActivities = activities.filter(activity => {
-    // Filter by user role
-    if (currentUser?.role === "colaborador") {
-      if (activity.collaboratorId !== currentUser.id) return false;
-    }
-
+  // Usar atividades filtradas por usuário se for colaborador
+  const userActivities = getUserActivities();
+  
+  const filteredActivities = userActivities.filter(activity => {
     // Filter by status
     if (filters.status.length > 0) {
       if (!filters.status.includes(activity.status)) return false;
@@ -180,52 +133,60 @@ const Index = () => {
     return true;
   });
 
+  // Se não há contrato selecionado, mostrar mensagem
+  if (!currentContract) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-2xl font-semibold mb-2">Nenhum contrato selecionado</h2>
+          <p className="text-muted-foreground mb-4">
+            Selecione um contrato para acessar o sistema de atividades.
+          </p>
+          <Link to="/contract-selection">
+            <Button>Selecionar Contrato</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Se está carregando, mostrar loading
+  if (activitiesLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando atividades...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">CDA</h1>
-                <p className="text-sm text-muted-foreground">
-                  Sistema de Controle de Atividades
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <UserSelector />
-              {currentUser?.role === "admin" && (
-                <Link to="/settings">
-                  <Button variant="outline" size="icon">
-                    <Settings className="w-4 h-4" />
-                  </Button>
-                </Link>
-              )}
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="gap-2">
-                    <Plus className="w-4 h-4" />
-                    Nova Atividade
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Registrar Nova Atividade</DialogTitle>
-                    <DialogDescription>
-                      Preencha os dados da atividade e adicione as evidências necessárias.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <ActivityForm onSubmit={handleAddActivity} />
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppHeader 
+        showContractInfo={true}
+        customActions={
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                Nova Atividade
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Registrar Nova Atividade</DialogTitle>
+                <DialogDescription>
+                  Preencha os dados da atividade e adicione as evidências necessárias.
+                </DialogDescription>
+              </DialogHeader>
+              <ActivityForm onSubmit={handleAddActivity} />
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="dashboard" className="space-y-6">
