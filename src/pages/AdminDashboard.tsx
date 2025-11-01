@@ -39,11 +39,13 @@ import { useServiceGroups } from '@/hooks/useServiceGroups';
 import { useActivityTypes } from '@/hooks/useActivityTypes';
 import { useEvaluationCriteria } from '@/hooks/useEvaluationCriteria';
 import { useUsers } from '@/hooks/useUsers';
+import { useContracts } from '@/hooks/useContracts';
 import { ServiceGroupForm } from '@/components/forms/ServiceGroupForm';
 import { ActivityTypeForm } from '@/components/forms/ActivityTypeForm';
 import { EvaluationCriteriaForm } from '@/components/forms/EvaluationCriteriaForm';
 import { UserForm } from '@/components/forms/UserForm';
 import { ContractManagement } from '@/components/ContractManagement';
+import { ContractModal } from '@/components/ContractModal';
 import { AppHeader } from '@/components/AppHeader';
 import { User, UserRole } from '@/types/auth';
 
@@ -74,6 +76,7 @@ const AdminDashboard: React.FC = () => {
   const { types, isLoading: typesLoading, addType, updateType, removeType } = useActivityTypes();
   const { criteria, isLoading: criteriaLoading, addCriterion, updateCriterion, removeCriterion } = useEvaluationCriteria();
   const { users, isLoading: usersLoading, addUser, updateUser, removeUser } = useUsers();
+  const { contracts, updateContract, isLoading: contractsLoading } = useContracts();
   
   // Estados para dashboard
   const [selectedContract, setSelectedContract] = useState<Contract | null>(currentContract);
@@ -101,6 +104,8 @@ const AdminDashboard: React.FC = () => {
   const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
   const [isCriterionModalOpen, setIsCriterionModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [contractModalOpen, setContractModalOpen] = useState(false);
+  const [editingContract, setEditingContract] = useState<Contract | null>(null);
 
   // Mock data para atividades
   const mockActivities: Activity[] = [
@@ -324,10 +329,16 @@ const AdminDashboard: React.FC = () => {
     if (!editingUser) return;
     setIsSubmitting(true);
     try {
+      const passwordWasUpdated = data.password && data.password.trim() !== '';
       await updateUser(editingUser.id, data);
+      
+      const description = passwordWasUpdated
+        ? `Usuário ${data.name} foi atualizado. A senha foi alterada com sucesso.`
+        : `Usuário ${data.name} foi atualizado no Supabase.`;
+      
       toast({ 
         title: "Usuário atualizado com sucesso!", 
-        description: `Usuário ${data.name} foi atualizado no Supabase.` 
+        description
       });
       setEditingUser(null);
       setIsUserModalOpen(false);
@@ -357,6 +368,43 @@ const AdminDashboard: React.FC = () => {
         description: error.message || "Erro desconhecido ao remover usuário",
         variant: "destructive" 
       });
+    }
+  };
+
+  // Função para obter os contratos de um usuário
+  const getUserContracts = (userId: string): Contract[] => {
+    return contracts.filter(contract => 
+      contract.contractUsers?.some(cu => cu.userId === userId)
+    );
+  };
+
+  // Função para abrir o modal de edição do contrato
+  const handleContractClick = (contract: Contract) => {
+    setEditingContract(contract);
+    setContractModalOpen(true);
+  };
+
+  // Handler para submeter alterações do contrato
+  const handleContractSubmit = async (data: Omit<Contract, "id" | "createdAt">) => {
+    if (!editingContract) return;
+    
+    setIsSubmitting(true);
+    try {
+      updateContract(editingContract.id, data);
+      toast({ 
+        title: "Contrato atualizado com sucesso!", 
+        description: "As alterações foram salvas." 
+      });
+      setContractModalOpen(false);
+      setEditingContract(null);
+    } catch (error) {
+      toast({ 
+        title: "Erro ao atualizar contrato", 
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive" 
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -537,52 +585,92 @@ const AdminDashboard: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-2">
-              {users.map((user) => (
-                <div
-                  key={user.id}
-                  className="border rounded-lg p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{user.name}</span>
-                        {!user.isActive && (
-                          <Badge variant="secondary" className="text-xs">Inativo</Badge>
+              {users.map((user) => {
+                const userContracts = getUserContracts(user.id);
+                return (
+                  <div
+                    key={user.id}
+                    className="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{user.name}</span>
+                          {!user.isActive && (
+                            <Badge variant="secondary" className="text-xs">Inativo</Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>{user.email}</span>
+                          <span>•</span>
+                          <Badge variant="outline" className="text-xs capitalize">{user.role}</Badge>
+                        </div>
+                        
+                        {/* Exibir contratos do usuário */}
+                        {userContracts.length > 0 ? (
+                          <div className="mt-2">
+                            <p className="text-xs text-muted-foreground mb-1">Contratos:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {userContracts.map((contract) => (
+                                <Badge
+                                  key={contract.id}
+                                  variant="secondary"
+                                  className="cursor-pointer hover:bg-blue-200 transition-colors"
+                                  onClick={() => handleContractClick(contract)}
+                                >
+                                  {contract.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic mt-2">
+                            Nenhum contrato associado
+                          </p>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>{user.email}</span>
-                        <span>•</span>
-                        <Badge variant="outline" className="text-xs capitalize">{user.role}</Badge>
+                      
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setEditingUser(user);
+                            setIsUserModalOpen(true);
+                          }}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteUser(user.id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setEditingUser(user);
-                        setIsUserModalOpen(true);
-                      }}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteUser(user.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </TabsContent>
       </Tabs>
       </main>
+
+      {/* Modal de edição de contrato */}
+      <ContractModal
+        isOpen={contractModalOpen}
+        onClose={() => {
+          setContractModalOpen(false);
+          setEditingContract(null);
+        }}
+        contract={editingContract || undefined}
+        onSubmit={handleContractSubmit}
+        isLoading={isSubmitting || contractsLoading}
+        defaultTab="groups-services" // Abrir na aba de grupos e serviços (linhas de serviço)
+      />
 
       <CommentSystem enabled={true} />
     </div>

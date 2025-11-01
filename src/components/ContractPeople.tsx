@@ -3,13 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Trash2, Edit2, Save, X, Users, UserCheck, UserX } from "lucide-react";
+import { Plus, Trash2, Edit2, Save, X, Users, UserCheck, UserX, Check, ChevronsUpDown } from "lucide-react";
 import { ContractUser, ServiceGroup, ServiceLine } from "@/data/mockData";
 import { User } from "@/types/auth";
+import { cn } from "@/lib/utils";
 
 interface ContractPeopleProps {
   contractUsers: ContractUser[];
@@ -26,18 +29,20 @@ export const ContractPeople = ({
   serviceGroups,
   serviceLines,
 }: ContractPeopleProps) => {
-  const [selectedRole, setSelectedRole] = useState<"colaborador" | "lider" | "fiscal">("colaborador");
+  const [selectedRole, setSelectedRole] = useState<"colaborador" | "lider" | "fiscal" | "todos">("colaborador");
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [selectedLines, setSelectedLines] = useState<string[]>([]);
   const [editingUser, setEditingUser] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [userSearchOpen, setUserSearchOpen] = useState(false);
+  const [userSearchValue, setUserSearchValue] = useState("");
 
   // Filtrar usuários disponíveis por role e termo de busca
   const filteredUsers = availableUsers.filter(user => {
-    const matchesRole = user.role === selectedRole;
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    // Se "todos" estiver selecionado, não filtrar por role
+    const matchesRole = selectedRole === "todos" || user.role === selectedRole;
+    const matchesSearch = user.name.toLowerCase().includes(userSearchValue.toLowerCase()) ||
+                         user.email.toLowerCase().includes(userSearchValue.toLowerCase());
     const notAlreadyAssigned = !contractUsers.some(cu => cu.userId === user.id);
     return matchesRole && matchesSearch && notAlreadyAssigned;
   });
@@ -45,6 +50,13 @@ export const ContractPeople = ({
   // Obter usuários já atribuídos por role
   const getUsersByRole = (role: "colaborador" | "lider" | "fiscal") => {
     return contractUsers.filter(cu => cu.role === role);
+  };
+
+  // Obter nome do usuário selecionado
+  const getSelectedUserName = () => {
+    if (!selectedUser) return "";
+    const user = availableUsers.find(u => u.id === selectedUser);
+    return user ? `${user.name} (${user.email})` : "";
   };
 
   // Obter linhas de serviço para um grupo específico
@@ -59,13 +71,28 @@ export const ContractPeople = ({
     const user = availableUsers.find(u => u.id === selectedUser);
     if (!user) return;
 
+    // Se "todos" estiver selecionado, usar o role do próprio usuário
+    // Caso contrário, usar o role selecionado (mas converter "todos" para o role do usuário)
+    let finalRole: "colaborador" | "lider" | "fiscal" | "admin";
+    
+    if (selectedRole === "todos") {
+      // Usar o role do próprio usuário, mas garantir que seja um dos valores válidos
+      if (user.role === "admin") {
+        finalRole = "admin";
+      } else {
+        finalRole = user.role as "colaborador" | "lider" | "fiscal";
+      }
+    } else {
+      finalRole = selectedRole;
+    }
+
     const newContractUser: ContractUser = {
       id: `contract-user-${Date.now()}`,
       userId: selectedUser,
       contractId: "", // Será preenchido pelo componente pai
-      role: selectedRole,
+      role: finalRole,
       serviceGroups: selectedGroups,
-      serviceLines: selectedRole === "fiscal" ? [] : selectedLines, // Fiscal não tem linhas de serviço
+      serviceLines: finalRole === "fiscal" ? [] : selectedLines, // Fiscal não tem linhas de serviço
       isActive: true,
       assignedAt: new Date().toISOString(),
       assignedBy: "current-user", // Será preenchido pelo componente pai
@@ -77,6 +104,7 @@ export const ContractPeople = ({
     setSelectedUser("");
     setSelectedGroups([]);
     setSelectedLines([]);
+    setUserSearchValue("");
   };
 
   // Remover usuário do contrato
@@ -158,11 +186,16 @@ export const ContractPeople = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="role">Tipo de Usuário</Label>
-              <Select value={selectedRole} onValueChange={(value: "colaborador" | "lider" | "fiscal") => setSelectedRole(value)}>
+              <Select value={selectedRole} onValueChange={(value: "colaborador" | "lider" | "fiscal" | "todos") => {
+                setSelectedRole(value);
+                // Limpar seleção de usuário ao mudar o tipo
+                setSelectedUser("");
+              }}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="colaborador">Colaborador</SelectItem>
                   <SelectItem value="lider">Líder</SelectItem>
                   <SelectItem value="fiscal">Fiscal</SelectItem>
@@ -172,32 +205,62 @@ export const ContractPeople = ({
 
             <div>
               <Label htmlFor="user">Usuário</Label>
-              <div className="space-y-2">
-                <Input
-                  placeholder="Buscar usuário..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <Select value={selectedUser} onValueChange={setSelectedUser}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um usuário" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredUsers.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        <div className="flex items-center gap-2">
-                            <Avatar className="w-6 h-6">
-                              <AvatarImage src={undefined} />
-                              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                          <span>{user.name}</span>
-                          <span className="text-muted-foreground text-sm">({user.email})</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Popover open={userSearchOpen} onOpenChange={setUserSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={userSearchOpen}
+                    className="w-full justify-between"
+                  >
+                    {selectedUser
+                      ? getSelectedUserName()
+                      : "Selecione um usuário..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar usuário..." value={userSearchValue} onValueChange={setUserSearchValue} />
+                    <CommandList>
+                      <CommandEmpty>Nenhum usuário encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        {filteredUsers.map((user) => (
+                          <CommandItem
+                            key={user.id}
+                            value={`${user.name} ${user.email}`}
+                            onSelect={() => {
+                              setSelectedUser(user.id);
+                              setUserSearchOpen(false);
+                              setUserSearchValue("");
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedUser === user.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <Avatar className="w-6 h-6 shrink-0">
+                                <AvatarImage src={undefined} />
+                                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <span className="truncate">{user.name}</span>
+                                <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+                              </div>
+                              <Badge variant="outline" className="ml-auto text-xs shrink-0">
+                                {user.role === "admin" ? "Admin" : user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                              </Badge>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 

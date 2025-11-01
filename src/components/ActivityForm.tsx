@@ -62,6 +62,10 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
   const statuses = currentContract?.statuses || [];
   const units = currentContract?.units || [];
   const workShifts = currentContract?.workShifts || [];
+  
+  // Configurações de obrigatoriedade do contrato
+  const evidenceRequired = currentContract?.config?.evidenceRequired ?? true;
+  const documentsRequired = currentContract?.config?.documentsRequired ?? false;
 
   // Lógica baseada em roles para filtrar dados disponíveis
   const availableCollaborators = useMemo(() => {
@@ -208,6 +212,18 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
       
       // Validação de sobreposição (opcional - pode ser configurável)
       // TODO: Implementar validação de sobreposição se necessário
+      
+      // Validação de evidências obrigatórias
+      if (evidenceRequired && photos.length === 0) {
+        toast.error("O envio de fotos é obrigatório para este contrato");
+        return;
+      }
+      
+      // Validação de documentos obrigatórios
+      if (documentsRequired && documents.length === 0) {
+        toast.error("O envio de documentos é obrigatório para este contrato");
+        return;
+      }
       
       // Buscar dados do colaborador selecionado
       const selectedCollaborator = users.find(u => u.id === formData.collaboratorId);
@@ -603,7 +619,7 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
         <h3 className="text-lg font-medium">Evidências</h3>
         
         <div>
-          <Label>Fotos *</Label>
+          <Label>Fotos {evidenceRequired && "*"}</Label>
           <Card className="p-4 border-2 border-dashed mt-2">
             <input
               type="file"
@@ -612,6 +628,7 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
               onChange={handlePhotoUpload}
               className="hidden"
               id="photo-upload"
+              required={evidenceRequired}
             />
             <label
               htmlFor="photo-upload"
@@ -649,7 +666,9 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
         </div>
 
         <div>
-          <Label>Documentos (Opcional)</Label>
+          <Label>
+            Documentos {documentsRequired ? "*" : "(Opcional)"}
+          </Label>
           <Card className="p-4 border-2 border-dashed mt-2">
             <input
               type="file"
@@ -658,6 +677,7 @@ export const ActivityForm = ({ onSubmit }: { onSubmit?: (data: any) => void }) =
               onChange={handleDocumentUpload}
               className="hidden"
               id="doc-upload"
+              required={documentsRequired}
             />
             <label
               htmlFor="doc-upload"

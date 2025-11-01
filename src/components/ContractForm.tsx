@@ -8,9 +8,10 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Edit2, Save, X } from "lucide-react";
-import { Contract, ServiceGroup, ServiceLine, ContractConfig, DynamicField, EvaluationCriteria, ContractUser, ActivityType, Scope, Status, Unit, WorkShift } from "@/data/mockData";
+import { Plus, Trash2, Edit2, Save, X, ArrowUp, ArrowDown } from "lucide-react";
+import { Contract, ServiceGroup, ServiceLine, ContractConfig, DynamicField, EvaluationCriteria, ContractUser, ActivityType, Scope, Status, Unit, WorkShift, DynamicTable } from "@/data/mockData";
 import { ContractDynamicFields } from "./ContractDynamicFields";
+import { ContractDynamicTables } from "./ContractDynamicTables";
 import { ContractEvaluationCriteria } from "./ContractEvaluationCriteria";
 import { ContractPeople } from "./ContractPeople";
 import { useUsers } from "@/hooks/useUsers";
@@ -20,9 +21,10 @@ interface ContractFormProps {
   onSubmit: (data: Omit<Contract, "id" | "createdAt">) => void;
   onCancel: () => void;
   isLoading?: boolean;
+  defaultTab?: string; // Tab padrão para abrir
 }
 
-export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }: ContractFormProps) => {
+export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false, defaultTab }: ContractFormProps) => {
   const { users } = useUsers();
   
   const [formData, setFormData] = useState({
@@ -43,6 +45,7 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
   const [serviceGroups, setServiceGroups] = useState<ServiceGroup[]>([]);
   const [serviceLines, setServiceLines] = useState<ServiceLine[]>([]);
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
+  const [dynamicTables, setDynamicTables] = useState<DynamicTable[]>([]);
   const [evaluationCriteria, setEvaluationCriteria] = useState<EvaluationCriteria[]>([]);
   const [contractUsers, setContractUsers] = useState<ContractUser[]>([]);
   const [activityTypes, setActivityTypes] = useState<ActivityType[]>([]);
@@ -57,6 +60,8 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
   const [editingStatus, setEditingStatus] = useState<string | null>(null);
   const [editingUnit, setEditingUnit] = useState<string | null>(null);
   const [editingWorkShift, setEditingWorkShift] = useState<string | null>(null);
+  const [lineSortBy, setLineSortBy] = useState<"code" | "name" | "none">("none");
+  const [lineSortOrder, setLineSortOrder] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     if (contract) {
@@ -68,6 +73,7 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
       setServiceGroups(contract.serviceGroups || []);
       setServiceLines(contract.serviceLines || []);
       setDynamicFields(contract.dynamicFields || []);
+      setDynamicTables(contract.dynamicTables || []);
       setEvaluationCriteria(contract.evaluationCriteria || []);
       setContractUsers(contract.contractUsers || []);
       setActivityTypes(contract.activityTypes || []);
@@ -87,6 +93,7 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
         serviceGroups,
         serviceLines,
         dynamicFields,
+        dynamicTables,
         evaluationCriteria,
         contractUsers,
         activityTypes,
@@ -145,7 +152,24 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
   };
 
   const getServiceLinesForGroup = (groupId: string) => {
-    return serviceLines.filter(line => line.groupId === groupId);
+    let lines = serviceLines.filter(line => line.groupId === groupId);
+    
+    // Aplicar ordenação se solicitado
+    if (lineSortBy !== "none") {
+      lines = [...lines].sort((a, b) => {
+        let comparison = 0;
+        
+        if (lineSortBy === "code") {
+          comparison = (a.code || "").localeCompare(b.code || "", undefined, { numeric: true, sensitivity: 'base' });
+        } else if (lineSortBy === "name") {
+          comparison = (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: 'base' });
+        }
+        
+        return lineSortOrder === "asc" ? comparison : -comparison;
+      });
+    }
+    
+    return lines;
   };
 
   // Funções para ActivityType
@@ -312,7 +336,7 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
         </div>
       </div>
 
-      <Tabs defaultValue="contract-attributes" className="w-full">
+      <Tabs defaultValue={defaultTab || "contract-attributes"} className="w-full">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="contract-attributes">Atributos dos Contratos</TabsTrigger>
           <TabsTrigger value="groups-services">Grupos e Serviços</TabsTrigger>
@@ -570,8 +594,49 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
             <div>
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium">Linhas de Serviço</h3>
-                <div className="text-sm text-muted-foreground">
-                  Total: {serviceLines.length} linhas
+                <div className="flex items-center gap-4">
+                  {/* Controles de Ordenação */}
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="sort-by" className="text-sm">Ordenar por:</Label>
+                    <Select
+                      value={lineSortBy}
+                      onValueChange={(value: "code" | "name" | "none") => {
+                        setLineSortBy(value);
+                        if (value === "none") {
+                          setLineSortOrder("asc");
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="w-32 h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Nenhuma</SelectItem>
+                        <SelectItem value="code">Código</SelectItem>
+                        <SelectItem value="name">Nome</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    {lineSortBy !== "none" && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLineSortOrder(lineSortOrder === "asc" ? "desc" : "asc")}
+                        className="h-8"
+                      >
+                        {lineSortOrder === "asc" ? (
+                          <ArrowUp className="w-4 h-4" />
+                        ) : (
+                          <ArrowDown className="w-4 h-4" />
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="text-sm text-muted-foreground">
+                    Total: {serviceLines.length} linhas
+                  </div>
                 </div>
               </div>
 
@@ -587,97 +652,125 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
                           />
                           <CardTitle className="text-base">{group.name}</CardTitle>
                         </div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => addServiceLine(group.id)}
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Adicionar Linha
-                        </Button>
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">
                       <div className="space-y-3">
-                        {getServiceLinesForGroup(group.id).map((line) => (
-                          <div key={line.id} className="border rounded-lg p-3">
-                            {editingLine === line.id ? (
-                              <div className="space-y-3">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                  <div>
-                                    <Label htmlFor={`line-name-${line.id}`}>Nome</Label>
-                                    <Input
-                                      id={`line-name-${line.id}`}
-                                      value={line.name}
-                                      onChange={(e) => updateServiceLine(line.id, { name: e.target.value })}
-                                      placeholder="Nome da linha de serviço"
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label htmlFor={`line-code-${line.id}`}>Código</Label>
-                                    <Input
-                                      id={`line-code-${line.id}`}
-                                      value={line.code}
-                                      onChange={(e) => updateServiceLine(line.id, { code: e.target.value })}
-                                      placeholder="Ex: DEV-001"
-                                    />
-                                  </div>
-                                </div>
+                        {/* Botão para adicionar nova linha - sempre no topo */}
+                        {!editingLine && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => addServiceLine(group.id)}
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Adicionar Linha
+                          </Button>
+                        )}
+
+                        {/* Formulário de edição/nova linha - sempre no topo, acima das linhas existentes */}
+                        {editingLine && serviceLines.find(l => l.id === editingLine && l.groupId === group.id) && (
+                          <div className="border rounded-lg p-3 border-primary bg-primary/5">
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div>
-                                  <Label htmlFor={`line-description-${line.id}`}>Descrição</Label>
-                                  <Textarea
-                                    id={`line-description-${line.id}`}
-                                    value={line.description}
-                                    onChange={(e) => updateServiceLine(line.id, { description: e.target.value })}
-                                    placeholder="Descrição da linha de serviço"
-                                    rows={2}
+                                  <Label htmlFor={`line-code-${editingLine}`}>Código</Label>
+                                  <Input
+                                    id={`line-code-${editingLine}`}
+                                    value={serviceLines.find(l => l.id === editingLine)?.code || ""}
+                                    onChange={(e) => updateServiceLine(editingLine, { code: e.target.value })}
+                                    placeholder="Ex: 2.1"
                                   />
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                  <div>
-                                    <Label htmlFor={`line-value-${line.id}`}>Valor (R$)</Label>
-                                    <Input
-                                      id={`line-value-${line.id}`}
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      value={line.value}
-                                      onChange={(e) => updateServiceLine(line.id, { value: parseFloat(e.target.value) || 0 })}
-                                      placeholder="0.00"
-                                    />
-                                  </div>
-                                  <div className="flex items-end gap-2">
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      onClick={() => setEditingLine(null)}
-                                      className="flex-1"
-                                    >
-                                      <Save className="w-4 h-4 mr-2" />
-                                      Salvar
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      variant="destructive"
-                                      onClick={() => deleteServiceLine(line.id)}
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                  </div>
+                                <div>
+                                  <Label htmlFor={`line-name-${editingLine}`}>Nome</Label>
+                                  <Input
+                                    id={`line-name-${editingLine}`}
+                                    value={serviceLines.find(l => l.id === editingLine)?.name || ""}
+                                    onChange={(e) => updateServiceLine(editingLine, { name: e.target.value })}
+                                    placeholder="Nome da linha de serviço"
+                                  />
                                 </div>
                               </div>
-                            ) : (
+                              <div>
+                                <Label htmlFor={`line-description-${editingLine}`}>Descrição</Label>
+                                <Textarea
+                                  id={`line-description-${editingLine}`}
+                                  value={serviceLines.find(l => l.id === editingLine)?.description || ""}
+                                  onChange={(e) => updateServiceLine(editingLine, { description: e.target.value })}
+                                  placeholder="Descrição da linha de serviço"
+                                  rows={2}
+                                />
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                  <Label htmlFor={`line-value-${editingLine}`}>Valor (R$)</Label>
+                                  <Input
+                                    id={`line-value-${editingLine}`}
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={serviceLines.find(l => l.id === editingLine)?.value || 0}
+                                    onChange={(e) => updateServiceLine(editingLine, { value: parseFloat(e.target.value) || 0 })}
+                                    placeholder="0.00"
+                                  />
+                                </div>
+                                <div className="flex items-end gap-2">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={() => {
+                                      const line = serviceLines.find(l => l.id === editingLine);
+                                      // Só salvar se tiver código e nome
+                                      if (line && line.code && line.name) {
+                                        setEditingLine(null);
+                                      }
+                                    }}
+                                    className="flex-1"
+                                    disabled={!serviceLines.find(l => l.id === editingLine)?.code || !serviceLines.find(l => l.id === editingLine)?.name}
+                                  >
+                                    <Save className="w-4 h-4 mr-2" />
+                                    Salvar
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => {
+                                      deleteServiceLine(editingLine);
+                                      setEditingLine(null);
+                                    }}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Linhas existentes (não em edição) */}
+                        {getServiceLinesForGroup(group.id)
+                          .filter(line => editingLine !== line.id)
+                          .map((line) => (
+                            <div key={line.id} className="border rounded-lg p-3">
                               <div className="flex items-center justify-between">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-1">
+                                    {/* Código antes do nome */}
+                                    {line.code && (
+                                      <Badge variant="outline" className="font-mono">{line.code}</Badge>
+                                    )}
                                     <span className="font-medium">{line.name}</span>
-                                    <Badge variant="outline">{line.code}</Badge>
                                     <Badge variant="secondary">
                                       R$ {line.value.toFixed(2)}
                                     </Badge>
                                   </div>
-                                  <p className="text-sm text-muted-foreground">{line.description}</p>
+                                  {line.description && (
+                                    <p className="text-sm text-muted-foreground">{line.description}</p>
+                                  )}
                                 </div>
                                 <Button
                                   type="button"
@@ -688,10 +781,11 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
                                   <Edit2 className="w-4 h-4" />
                                 </Button>
                               </div>
-                            )}
-                          </div>
-                        ))}
-                        {getServiceLinesForGroup(group.id).length === 0 && (
+                            </div>
+                          ))}
+                        
+                        {/* Mensagem quando não há linhas */}
+                        {getServiceLinesForGroup(group.id).filter(line => editingLine !== line.id).length === 0 && !editingLine && (
                           <div className="text-center py-4 text-muted-foreground">
                             Nenhuma linha de serviço cadastrada
                           </div>
@@ -1084,11 +1178,15 @@ export const ContractForm = ({ contract, onSubmit, onCancel, isLoading = false }
         </TabsContent>
 
         <TabsContent value="additional-info" className="space-y-4">
-          <h3 className="text-lg font-medium">Campos Dinâmicos</h3>
-          <ContractDynamicFields
-            fields={dynamicFields}
-            onFieldsChange={setDynamicFields}
-          />
+          <div className="space-y-6">
+            <div>
+              <ContractDynamicFields
+                fields={dynamicFields}
+                onFieldsChange={setDynamicFields}
+                dynamicTables={dynamicTables}
+              />
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="access-profiles" className="space-y-4">

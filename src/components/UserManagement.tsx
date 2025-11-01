@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useUserProfile, useAllUserProfiles } from '../hooks/useUserProfile';
+import { useContracts } from '../hooks/useContracts';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -9,14 +10,19 @@ import { Badge } from './ui/badge';
 import { Loader2, UserPlus, Eye, EyeOff, Trash2, Edit } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { ProfileType } from '../lib/types/supabase';
+import { ContractModal } from './ContractModal';
+import type { Contract } from '../data/mockData';
 
 export const UserManagement: React.FC = () => {
   const { isAdmin } = useUserProfile();
   const { profiles, loading, error, refetch } = useAllUserProfiles();
+  const { contracts, updateContract, isLoading: contractsLoading } = useContracts();
   const [isCreating, setIsCreating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [contractModalOpen, setContractModalOpen] = useState(false);
+  const [editingContract, setEditingContract] = useState<Contract | null>(null);
   
   const [newUser, setNewUser] = useState({
     email: '',
@@ -24,6 +30,36 @@ export const UserManagement: React.FC = () => {
     name: '',
     profile_type: 'colaborador' as ProfileType
   });
+
+  // Função para obter os contratos de um usuário
+  const getUserContracts = (userId: string): Contract[] => {
+    return contracts.filter(contract => 
+      contract.contractUsers?.some(cu => cu.userId === userId)
+    );
+  };
+
+  // Função para abrir o modal de edição do contrato
+  const handleContractClick = (contract: Contract) => {
+    setEditingContract(contract);
+    setContractModalOpen(true);
+  };
+
+  // Handler para submeter alterações do contrato
+  const handleContractSubmit = async (data: Omit<Contract, "id" | "createdAt">) => {
+    if (!editingContract) return;
+    
+    setIsLoading(true);
+    try {
+      updateContract(editingContract.id, data);
+      setMessage('Contrato atualizado com sucesso!');
+      setContractModalOpen(false);
+      setEditingContract(null);
+    } catch (error) {
+      setMessage(`Erro ao atualizar contrato: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Verificar se o usuário é administrador
   if (!isAdmin()) {
@@ -302,60 +338,100 @@ export const UserManagement: React.FC = () => {
               </p>
             ) : (
               <div className="grid gap-4">
-                {profiles.map((profile) => (
-                  <Card key={profile.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <h4 className="font-semibold">{profile.name}</h4>
-                            <Badge className={getProfileTypeColor(profile.profile_type)}>
-                              {profile.profile_type}
-                            </Badge>
-                            {profile.is_active ? (
-                              <Badge variant="outline" className="text-green-600">
-                                Ativo
+                {profiles.map((profile) => {
+                  const userContracts = getUserContracts(profile.user_id);
+                  return (
+                    <Card key={profile.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center space-x-2">
+                              <h4 className="font-semibold">{profile.name}</h4>
+                              <Badge className={getProfileTypeColor(profile.profile_type)}>
+                                {profile.profile_type}
                               </Badge>
+                              {profile.is_active ? (
+                                <Badge variant="outline" className="text-green-600">
+                                  Ativo
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-red-600">
+                                  Inativo
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">{profile.email}</p>
+                            
+                            {/* Exibir contratos do usuário */}
+                            {userContracts.length > 0 ? (
+                              <div className="mt-2">
+                                <p className="text-xs text-muted-foreground mb-1">Contratos:</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {userContracts.map((contract) => (
+                                    <Badge
+                                      key={contract.id}
+                                      variant="secondary"
+                                      className="cursor-pointer hover:bg-blue-200 transition-colors"
+                                      onClick={() => handleContractClick(contract)}
+                                    >
+                                      {contract.name}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
                             ) : (
-                              <Badge variant="outline" className="text-red-600">
-                                Inativo
-                              </Badge>
+                              <p className="text-xs text-muted-foreground italic">
+                                Nenhum contrato associado
+                              </p>
                             )}
+                            
+                            <p className="text-xs text-muted-foreground">
+                              Criado em: {new Date(profile.created_at || '').toLocaleDateString('pt-BR')}
+                            </p>
                           </div>
-                          <p className="text-sm text-muted-foreground">{profile.email}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Criado em: {new Date(profile.created_at || '').toLocaleDateString('pt-BR')}
-                          </p>
+                          
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {/* Implementar edição */}}
+                              disabled={isLoading}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteUser(profile.user_id)}
+                              disabled={isLoading}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {/* Implementar edição */}}
-                            disabled={isLoading}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteUser(profile.user_id)}
-                            disabled={isLoading}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal de edição de contrato */}
+      <ContractModal
+        isOpen={contractModalOpen}
+        onClose={() => {
+          setContractModalOpen(false);
+          setEditingContract(null);
+        }}
+        contract={editingContract || undefined}
+        onSubmit={handleContractSubmit}
+        isLoading={isLoading || contractsLoading}
+        defaultTab="groups-services" // Abrir na aba de grupos e serviços (linhas de serviço)
+      />
     </div>
   );
 };

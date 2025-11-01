@@ -1,0 +1,6 @@
+# Deno
+.deno/
+
+# Logs
+*.log
+

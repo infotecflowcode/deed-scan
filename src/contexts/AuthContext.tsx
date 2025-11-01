@@ -35,6 +35,7 @@ interface AuthContextType extends AuthState {
   availableContracts: Contract[];
   signUp: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
+  updatePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -348,6 +349,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updatePassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: "Erro interno do servidor" };
+    }
+  };
+
   const availableContracts = authState.user 
     ? contracts.filter(contract => 
         authState.user!.contracts.includes(contract.id) && contract.status === "active"
@@ -363,6 +380,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     availableContracts,
     signUp,
     resetPassword,
+    updatePassword,
   };
 
   return (

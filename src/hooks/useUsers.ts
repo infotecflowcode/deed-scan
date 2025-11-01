@@ -37,13 +37,26 @@ export const useUsers = () => {
         return;
       }
 
+      // Função helper para mapear profile_type do banco para role do frontend
+      const mapProfileTypeToRole = (profileType: string): UserRole => {
+        const profileTypeMap: Record<string, UserRole> = {
+          'colaborador': 'colaborador',
+          'lider': 'lider',
+          'fiscal': 'fiscal',
+          'administrador': 'admin', // Mapear 'administrador' para 'admin'
+        };
+        return profileTypeMap[profileType] || 'colaborador';
+      };
+
       // Converter profiles do Supabase para formato User
       const supabaseUsers: User[] = profiles.map(profile => ({
         id: profile.user_id,
         name: profile.name,
         email: profile.email,
         password: '', // Senha não é retornada por segurança
-        role: profile.profile_type as UserRole,
+        role: mapProfileTypeToRole(profile.profile_type), // Mapear profile_type do banco para role do frontend
+        cpf: profile.cpf || undefined,
+        cargo: profile.cargo || undefined,
         contracts: [], // Será preenchido separadamente se necessário
         isActive: profile.is_active,
         lastLogin: profile.updated_at,
@@ -87,6 +100,8 @@ export const useUsers = () => {
           password: userData.password,
           name: userData.name,
           role: userData.role,
+          cpf: userData.cpf || null,
+          cargo: userData.cargo || null,
         }
       });
 
@@ -106,6 +121,8 @@ export const useUsers = () => {
         email: data.data.user.email,
         password: '', // Não armazenar senha localmente
         role: data.data.user.role as UserRole,
+        cpf: data.data.user.cpf || undefined,
+        cargo: data.data.user.cargo || undefined,
         contracts: [],
         isActive: data.data.user.is_active,
         lastLogin: data.data.user.created_at,
@@ -122,29 +139,88 @@ export const useUsers = () => {
     }
   }, [users, saveUsers]);
 
+  // Função helper para mapear role do frontend para profile_type do banco
+  const mapRoleToProfileType = (role: UserRole): string => {
+    const roleMap: Record<UserRole, string> = {
+      'colaborador': 'colaborador',
+      'lider': 'lider',
+      'fiscal': 'fiscal',
+      'admin': 'administrador', // Mapear 'admin' para 'administrador'
+    };
+    return roleMap[role] || role;
+  };
+
   // Atualizar usuário existente
   const updateUser = useCallback(async (userId: string, updates: Partial<User>) => {
     try {
-      // Atualizar no Supabase
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({
-          name: updates.name,
-          email: updates.email,
-          profile_type: updates.role,
-          is_active: updates.isActive,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', userId);
+      // Separar senha dos outros updates
+      const { password, ...otherUpdates } = updates;
+      
+      // Se uma nova senha foi fornecida, atualizar via Edge Function
+      if (password && password.trim() !== '') {
+        const { data: passwordData, error: passwordError } = await supabase.functions.invoke(
+          'admin-update-user-password',
+          {
+            body: {
+              target_user_id: userId,
+              new_password: password.trim(),
+            }
+          }
+        );
 
-      if (error) {
-        console.error("Erro ao atualizar usuário no Supabase:", error);
-        throw new Error(error.message);
+        if (passwordError) {
+          console.error("Erro ao atualizar senha:", passwordError);
+          throw new Error(passwordError.message || 'Erro ao atualizar senha');
+        }
+
+        if (!passwordData || !passwordData.success) {
+          throw new Error(passwordData?.error || 'Erro ao atualizar senha');
+        }
       }
 
-      // Atualizar lista local
+      // Atualizar outros campos no Supabase
+      const updatePayload: any = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (otherUpdates.name !== undefined) updatePayload.name = otherUpdates.name;
+      if (otherUpdates.email !== undefined) updatePayload.email = otherUpdates.email;
+      // Mapear role para profile_type correto do banco
+      if (otherUpdates.role !== undefined) {
+        const mappedProfileType = mapRoleToProfileType(otherUpdates.role);
+        updatePayload.profile_type = mappedProfileType;
+        console.log('Atualizando profile_type:', {
+          roleRecebido: otherUpdates.role,
+          profileTypeMapeado: mappedProfileType,
+          userId
+        });
+      }
+      if (otherUpdates.cpf !== undefined) updatePayload.cpf = otherUpdates.cpf || null;
+      if (otherUpdates.cargo !== undefined) updatePayload.cargo = otherUpdates.cargo || null;
+      if (otherUpdates.isActive !== undefined) updatePayload.is_active = otherUpdates.isActive;
+
+      // Só fazer update se houver campos para atualizar
+      if (Object.keys(updatePayload).length > 1) {
+        console.log('Payload de atualização:', updatePayload);
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .update(updatePayload)
+          .eq('user_id', userId)
+          .select();
+
+        if (error) {
+          console.error("Erro ao atualizar usuário no Supabase:", error);
+          throw new Error(error.message);
+        }
+
+        console.log('Usuário atualizado com sucesso:', data);
+      } else {
+        console.warn('Nenhum campo para atualizar além de updated_at');
+      }
+
+      // Atualizar lista local (sem incluir senha por segurança)
       const updatedUsers = users.map(user =>
-        user.id === userId ? { ...user, ...updates } : user
+        user.id === userId ? { ...user, ...otherUpdates } : user
       );
       setUsers(updatedUsers);
       saveUsers(updatedUsers);

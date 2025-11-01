@@ -40,6 +40,16 @@ export default function ContractSelection() {
     }
   }, [user, navigate]);
 
+  // Seleção automática se houver apenas 1 contrato disponível
+  useEffect(() => {
+    if (!isLoading && availableContracts.length === 1 && !currentContract) {
+      // Selecionar automaticamente o único contrato disponível
+      selectContract(availableContracts[0].id);
+      // Redirecionar para a página principal
+      navigate("/");
+    }
+  }, [isLoading, availableContracts, currentContract, selectContract, navigate]);
+
   const handleSelectContract = (contractId: string) => {
     // Selecionar o contrato no contexto
     selectContract(contractId);
@@ -155,21 +165,23 @@ export default function ContractSelection() {
                         </div>
                       </div>
 
-                      {/* Contract Stats */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="text-center p-3 bg-blue-50 rounded-lg">
-                          <p className="text-2xl font-bold text-blue-600">
-                            {contract.serviceGroups?.length || 0}
-                          </p>
-                          <p className="text-xs text-blue-600 font-medium">Grupos</p>
+                      {/* Contract Stats - Apenas para administradores */}
+                      {user.role === "admin" && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="text-center p-3 bg-blue-50 rounded-lg">
+                            <p className="text-2xl font-bold text-blue-600">
+                              {contract.serviceGroups?.length || 0}
+                            </p>
+                            <p className="text-xs text-blue-600 font-medium">Grupos</p>
+                          </div>
+                          <div className="text-center p-3 bg-indigo-50 rounded-lg">
+                            <p className="text-2xl font-bold text-indigo-600">
+                              {contract.serviceLines?.length || 0}
+                            </p>
+                            <p className="text-xs text-indigo-600 font-medium">Linhas</p>
+                          </div>
                         </div>
-                        <div className="text-center p-3 bg-indigo-50 rounded-lg">
-                          <p className="text-2xl font-bold text-indigo-600">
-                            {contract.serviceLines?.length || 0}
-                          </p>
-                          <p className="text-xs text-indigo-600 font-medium">Linhas</p>
-                        </div>
-                      </div>
+                      )}
 
                       {/* Creation Date */}
                       <div className="text-center p-3 bg-gray-50 rounded-lg">

@@ -59,6 +59,8 @@ export type Database = {
           updated_at: string | null
           updated_by: string | null
           user_id: string
+          cpf: string | null
+          cargo: string | null
         }
         Insert: {
           created_at?: string | null
@@ -71,6 +73,8 @@ export type Database = {
           updated_at?: string | null
           updated_by?: string | null
           user_id: string
+          cpf?: string | null
+          cargo?: string | null
         }
         Update: {
           created_at?: string | null
@@ -83,6 +87,8 @@ export type Database = {
           updated_at?: string | null
           updated_by?: string | null
           user_id?: string
+          cpf?: string | null
+          cargo?: string | null
         }
         Relationships: []
       }

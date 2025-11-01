@@ -4,6 +4,8 @@ export interface User {
   email: string;
   password: string;
   role: UserRole;
+  cpf?: string; // CPF do usuário
+  cargo?: string; // Cargo do usuário
   contracts: string[]; // IDs dos contratos que o usuário tem acesso
   isActive: boolean;
   lastLogin?: string;

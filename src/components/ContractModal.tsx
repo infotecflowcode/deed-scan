@@ -8,9 +8,10 @@ interface ContractModalProps {
   contract?: Contract;
   onSubmit: (data: Omit<Contract, "id" | "createdAt">) => void;
   isLoading?: boolean;
+  defaultTab?: string; // Tab padrão para abrir o modal
 }
 
-export const ContractModal = ({ isOpen, onClose, contract, onSubmit, isLoading = false }: ContractModalProps) => {
+export const ContractModal = ({ isOpen, onClose, contract, onSubmit, isLoading = false, defaultTab }: ContractModalProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
@@ -31,6 +32,7 @@ export const ContractModal = ({ isOpen, onClose, contract, onSubmit, isLoading =
           onSubmit={onSubmit}
           onCancel={onClose}
           isLoading={isLoading}
+          defaultTab={defaultTab}
         />
       </DialogContent>
     </Dialog>

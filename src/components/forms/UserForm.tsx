@@ -19,6 +19,8 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading = false }: UserFo
     email: "",
     password: "",
     role: "colaborador" as UserRole,
+    cpf: "",
+    cargo: "",
     contracts: [] as string[],
     isActive: true,
   });
@@ -28,18 +30,64 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading = false }: UserFo
       setFormData({
         name: user.name,
         email: user.email,
-        password: user.password,
+        password: "", // Sempre começar vazio ao editar (senha não é mostrada por segurança)
         role: user.role,
+        cpf: user.cpf || "",
+        cargo: user.cargo || "",
         contracts: user.contracts,
         isActive: user.isActive,
+      });
+    } else {
+      // Resetar formulário ao criar novo usuário
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        role: "colaborador",
+        cpf: "",
+        cargo: "",
+        contracts: [],
+        isActive: true,
       });
     }
   }, [user]);
 
+  // Função para formatar CPF (070.358.439-14)
+  const formatCPF = (cpf: string): string => {
+    // Remove tudo que não é dígito
+    const numbers = cpf.replace(/\D/g, '');
+    
+    // Aplica a máscara
+    if (numbers.length <= 3) {
+      return numbers;
+    } else if (numbers.length <= 6) {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+    } else if (numbers.length <= 9) {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+    } else {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`;
+    }
+  };
+
+  // Função para remover formatação do CPF (apenas números)
+  const unformatCPF = (cpf: string): string => {
+    return cpf.replace(/\D/g, '').slice(0, 11);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.name.trim() && formData.email.trim()) {
-      onSubmit(formData);
+      // Quando editando, só enviar senha se foi preenchida
+      const dataToSubmit = { ...formData };
+      if (user && !dataToSubmit.password.trim()) {
+        // Remover senha se estiver vazia ao editar
+        delete (dataToSubmit as any).password;
+      }
+      // Garantir que CPF está apenas com números para salvar no banco
+      if (dataToSubmit.cpf) {
+        dataToSubmit.cpf = unformatCPF(dataToSubmit.cpf);
+      }
+      onSubmit(dataToSubmit);
     }
   };
 
@@ -66,6 +114,34 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading = false }: UserFo
           placeholder="exemplo@email.com"
           required
         />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="cpf">CPF</Label>
+          <Input
+            id="cpf"
+            type="text"
+            value={formatCPF(formData.cpf)}
+            onChange={(e) => {
+              // Remove formatação e limita a 11 dígitos
+              const unformatted = unformatCPF(e.target.value);
+              setFormData(prev => ({ ...prev, cpf: unformatted }));
+            }}
+            placeholder="000.000.000-00"
+            maxLength={14}
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="cargo">Cargo</Label>
+          <Input
+            id="cargo"
+            value={formData.cargo}
+            onChange={(e) => setFormData(prev => ({ ...prev, cargo: e.target.value }))}
+            placeholder="Ex: Analista de Sistemas"
+          />
+        </div>
       </div>
 
       <div>
