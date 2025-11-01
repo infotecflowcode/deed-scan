@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DynamicField } from "@/data/mockData";
+import { DynamicField, DynamicTable } from "@/data/mockData";
 import { getFieldTypeConfig, FIELD_TYPES } from "@/lib/fieldTypes";
 import { Plus, Trash2, Edit, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -15,9 +15,10 @@ import { useToast } from "@/hooks/use-toast";
 interface ContractDynamicFieldsProps {
   fields: DynamicField[];
   onFieldsChange: (fields: DynamicField[]) => void;
+  dynamicTables?: DynamicTable[]; // para vincular dropdowns a tabelas
 }
 
-export const ContractDynamicFields = ({ fields, onFieldsChange }: ContractDynamicFieldsProps) => {
+export const ContractDynamicFields = ({ fields, onFieldsChange, dynamicTables = [] }: ContractDynamicFieldsProps) => {
   const { toast } = useToast();
   const [editingField, setEditingField] = useState<DynamicField | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -32,6 +33,8 @@ export const ContractDynamicFields = ({ fields, onFieldsChange }: ContractDynami
     placeholder: "",
     description: "",
     options: [] as { id: string; label: string; value: string }[],
+    optionSource: "static" as NonNullable<DynamicField["optionSource"]>,
+    tableId: undefined as string | undefined,
     min: undefined as number | undefined,
     max: undefined as number | undefined,
     step: undefined as number | undefined,
@@ -50,6 +53,8 @@ export const ContractDynamicFields = ({ fields, onFieldsChange }: ContractDynami
       placeholder: "",
       description: "",
       options: [],
+      optionSource: "static",
+      tableId: undefined,
       min: undefined,
       max: undefined,
       step: undefined,
@@ -76,6 +81,8 @@ export const ContractDynamicFields = ({ fields, onFieldsChange }: ContractDynami
       placeholder: field.placeholder || "",
       description: field.description || "",
       options: field.options || [],
+      optionSource: field.optionSource || (field.type === "dropdown" || field.type === "multidropdown" ? (field.tableId ? "table" : "static") : "static"),
+      tableId: field.tableId,
       min: field.min,
       max: field.max,
       step: field.step,
@@ -98,10 +105,19 @@ export const ContractDynamicFields = ({ fields, onFieldsChange }: ContractDynami
       return;
     }
 
-    if ((formData.type === "dropdown" || formData.type === "multidropdown") && formData.options.length === 0) {
+    if ((formData.type === "dropdown" || formData.type === "multidropdown") && formData.optionSource === "static" && formData.options.length === 0) {
       toast({
         title: "Erro",
         description: "Campos de seleção precisam ter pelo menos uma opção",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if ((formData.type === "dropdown" || formData.type === "multidropdown") && formData.optionSource === "table" && !formData.tableId) {
+      toast({
+        title: "Erro",
+        description: "Selecione uma tabela para este campo",
         variant: "destructive",
       });
       return;
@@ -115,7 +131,9 @@ export const ContractDynamicFields = ({ fields, onFieldsChange }: ContractDynami
       required: formData.required,
       placeholder: formData.placeholder.trim() || undefined,
       description: formData.description.trim() || undefined,
-      options: formData.options.length > 0 ? formData.options : undefined,
+      optionSource: formData.optionSource,
+      options: formData.optionSource === "static" && formData.options.length > 0 ? formData.options : undefined,
+      tableId: formData.optionSource === "table" ? formData.tableId : undefined,
       min: formData.min,
       max: formData.max,
       step: formData.step,
@@ -188,6 +206,8 @@ export const ContractDynamicFields = ({ fields, onFieldsChange }: ContractDynami
       ...prev,
       type,
       options: config.defaultOptions || [],
+      optionSource: (type === "dropdown" || type === "multidropdown") ? prev.optionSource : "static",
+      tableId: (type === "dropdown" || type === "multidropdown") ? prev.tableId : undefined,
       validation: config.defaultValidation || {},
     }));
   };
@@ -254,6 +274,11 @@ export const ContractDynamicFields = ({ fields, onFieldsChange }: ContractDynami
                           <span className="font-medium text-sm">{field.label}</span>
                           {field.required && (
                             <span className="text-red-500 text-sm">*</span>
+                          )}
+                          {(field.type === "dropdown" || field.type === "multidropdown") && (
+                            <Badge variant="outline" className="text-xs">
+                              {field.tableId ? "Tabela" : "Opções"}
+                            </Badge>
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
@@ -382,41 +407,71 @@ export const ContractDynamicFields = ({ fields, onFieldsChange }: ContractDynami
 
               {/* Opções para dropdown e multidropdown */}
               {(formData.type === "dropdown" || formData.type === "multidropdown") && (
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <Label className="text-sm">Opções</Label>
-                    <Button type="button" variant="outline" size="sm" onClick={handleAddOption}>
-                      <Plus className="h-3 w-3 mr-1" />
-                      Adicionar
-                    </Button>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-sm">Fonte de opções</Label>
+                      <Select value={formData.optionSource} onValueChange={(v) => setFormData(prev => ({ ...prev, optionSource: v as any }))}>
+                        <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="static">Opções configuradas aqui</SelectItem>
+                          <SelectItem value="table">Usar Tabela Dinâmica</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {formData.optionSource === "table" && (
+                      <div>
+                        <Label className="text-sm">Tabela vinculada</Label>
+                        <Select value={formData.tableId || ""} onValueChange={(val) => setFormData(prev => ({ ...prev, tableId: val }))}>
+                          <SelectTrigger className="h-8"><SelectValue placeholder="Selecione uma tabela" /></SelectTrigger>
+                          <SelectContent>
+                            {dynamicTables.map(t => (
+                              <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
-                  <div className="space-y-2">
-                    {formData.options.map((option, index) => (
-                      <div key={option.id} className="flex gap-2">
-                        <Input
-                          placeholder="Label da opção"
-                          value={option.label}
-                          onChange={(e) => handleUpdateOption(index, "label", e.target.value)}
-                          className="h-8"
-                        />
-                        <Input
-                          placeholder="Valor"
-                          value={option.value}
-                          onChange={(e) => handleUpdateOption(index, "value", e.target.value)}
-                          className="h-8"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleRemoveOption(index)}
-                        >
-                          <Trash2 className="h-3 w-3" />
+
+                  {formData.optionSource === "static" && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <Label className="text-sm">Opções</Label>
+                        <Button type="button" variant="outline" size="sm" onClick={handleAddOption}>
+                          <Plus className="h-3 w-3 mr-1" />
+                          Adicionar
                         </Button>
                       </div>
-                    ))}
-                  </div>
+                      <div className="space-y-2">
+                        {formData.options.map((option, index) => (
+                          <div key={option.id} className="flex gap-2">
+                            <Input
+                              placeholder="Label da opção"
+                              value={option.label}
+                              onChange={(e) => handleUpdateOption(index, "label", e.target.value)}
+                              className="h-8"
+                            />
+                            <Input
+                              placeholder="Valor"
+                              value={option.value}
+                              onChange={(e) => handleUpdateOption(index, "value", e.target.value)}
+                              className="h-8"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleRemoveOption(index)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

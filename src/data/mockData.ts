@@ -41,7 +41,10 @@ export interface DynamicField {
   required: boolean;
   placeholder?: string;
   description?: string;
+  // Fonte de opções: estáticas (no próprio campo) ou por tabela dinâmica
+  optionSource?: "static" | "table";
   options?: { id: string; label: string; value: string }[];
+  tableId?: string; // quando optionSource === 'table'
   min?: number;
   max?: number;
   step?: number;
@@ -52,6 +55,22 @@ export interface DynamicField {
   order: number;
   isActive: boolean;
   contractId?: string;
+}
+
+// Tabelas dinâmicas reutilizáveis para fornecer opções a campos de seleção
+export interface DynamicTableValue {
+  id: string;
+  label: string;
+  value: string;
+}
+
+export interface DynamicTable {
+  id: string;
+  name: string; // ex: Navio, Equipamento
+  values: DynamicTableValue[]; // linhas possíveis
+  contractId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ContractConfig {
@@ -156,6 +175,7 @@ export interface Contract {
   serviceLines: ServiceLine[];
   config: ContractConfig;
   dynamicFields: DynamicField[];
+  dynamicTables?: DynamicTable[];
   evaluationCriteria: EvaluationCriteria[];
   contractUsers: ContractUser[];
   activityTypes: ActivityType[];
